@@ -61,9 +61,14 @@ def daily_summary(ctx: click.Context, date: date) -> None:
     ):
         ordered_issues[issue.repository].append(issue)
 
-    for issues in ordered_issues.values():
+    for repository, issues in ordered_issues.items():
+        if not issues:
+            continue
+
+        print(f"* {repository}")
         for summary in summarize(issues):
-            print(summary)
+            print(f"** {summary}")
+        print()
 
 
 if __name__ == "__main__":
