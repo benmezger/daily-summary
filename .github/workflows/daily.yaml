@@ -18,7 +18,13 @@ jobs:
         run: uv sync
 
       - name: Generate daily summary
+        id: summary
         run: |
-          uv run -m daily daily-summary --date $(date "+%Y-%m-%d") --no-ollama
+          echo "text=$(uv run -m daily daily-summary --date $(date '+%Y-%m-%d') --no-ollama | tr -d '\n')" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAYLOAD: ${{ steps.summary.outputs.date }}"
