@@ -11,3 +11,9 @@ dependencies = [
     "pydash>=8.0.5",
     "pygithub>=2.6.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.395",
+    "ruff>=0.9.9",
+]
