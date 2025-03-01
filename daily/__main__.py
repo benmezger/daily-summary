@@ -40,11 +40,18 @@ def list_prs(ctx: click.Context, date: date) -> None:
 
 
 @cli.command()
+@click.option(
+    "--file",
+    help="File to store output. Defaults to stdout",
+    type=click.File("w"),
+    default=sys.stdout,
+)
 @click.pass_context
-def account(ctx: click.Context) -> None:
+def account(ctx: click.Context, file: TextIO) -> None:
     context: Context = ctx.obj
     acc = context.github.get_user()
-    print(f"{acc.name} - @{acc.username}")
+    file.write(f"{acc}\n")
+    file.close()
 
 
 @cli.command()

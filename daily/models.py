@@ -12,6 +12,9 @@ class User(BaseModel):
     username: str
     name: str
 
+    def __str__(self) -> str:
+        return f"{self.name} - @{self.username}"
+
 
 class Issue(BaseModel):
     title: str
