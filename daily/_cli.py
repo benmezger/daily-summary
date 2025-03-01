@@ -19,7 +19,6 @@ from ._summary import Summary, write_summary
 
 class _Context(NamedTuple):
     github: Github
-    username: str
 
 
 @click.group()
@@ -27,7 +26,7 @@ class _Context(NamedTuple):
 @click.option("--username", type=str, default="benmezger", show_default=True)
 @click.pass_context
 def cli(ctx: click.Context, token: str, username: str) -> None:
-    ctx.obj = _Context(github=Github(token, username=username), username=username)
+    ctx.obj = _Context(github=Github(token, username=username))
 
 
 @cli.command()
