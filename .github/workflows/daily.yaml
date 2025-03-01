@@ -1,10 +1,13 @@
 name: Create daily summary
-on: ["push"]
+on:
+  schedule:
+    # 17:00 UTC = 18:00 CET (Winter) / 19:00 CEST (Summer)
+    - cron: "0 17 * * *"
 
 jobs:
   create-summary:
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions: write-all
     steps:
       - uses: actions/checkout@v4
 
@@ -18,7 +21,19 @@ jobs:
         run: uv sync
 
       - name: Generate daily summary
+        id: summary
         run: |
-          uv run -m daily daily-summary --date $(date "+%Y-%m-%d") --no-ollama
+          echo 'text<<EOF' >> $GITHUB_OUTPUT
+          uv run -m daily daily-summary --date $(date '+%Y-%m-%d') --no-ollama >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: |
+          gh issue --repo "${{ github.repository }}" create \
+            --title "Daily Summary of $(date '+%Y-%m-%d')" \
+            --body "${{ steps.summary.outputs.text }}" \
+            --assignee benmezger \
+            --label summary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

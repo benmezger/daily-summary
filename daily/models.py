@@ -18,7 +18,7 @@ class User(BaseModel):
 
 class Issue(BaseModel):
     title: str
-    description: str
+    description: str | None
     organization: str | None = None
     merged: bool
     url: str
