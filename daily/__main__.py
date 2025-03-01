@@ -80,6 +80,12 @@ def daily_summary(ctx: click.Context, date: date, ollama_model: str) -> None:
             )
         print()
 
+    print("Meetings")
+    print("    * ")
+
+    print("Misc")
+    print("    * PR reviews and discussions")
+
 
 if __name__ == "__main__":
     cli()
