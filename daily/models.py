@@ -4,7 +4,9 @@
 # Created at <2025-02-28 Fri 23:18>
 
 from datetime import datetime
+
 from pydantic import BaseModel
+
 from ._ollama import Ollama
 
 

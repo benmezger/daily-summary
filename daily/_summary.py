@@ -3,8 +3,8 @@
 # Author: Ben Mezger <me@benmezger.nl>
 # Created at <2025-03-01 Sat 17:44>
 
-from typing import TextIO
 from datetime import datetime
+from typing import TextIO
 
 from pydantic.main import BaseModel
 

@@ -24,3 +24,18 @@ lint = "ruff check ."
 check_types = "pyright ."
 fmt = "ruff format . && ruff check --fix ."
 cli = "python -m daily"
+
+[tool.ruff]
+lint.select = [
+    "B", # flake8-bugbear
+    "E", # pycodestyle
+    "F", # pyflakes
+    "FURB", # refurb
+    "I", # isort
+    "PIE", # flake8-pie
+    "RUF", # ruff specifics, with mutable class default checks
+    "UP", # pyupgrade
+    "W", # pycodestyle
+]
+target-version = "py311"
+extend-exclude = [".venv"]

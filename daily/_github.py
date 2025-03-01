@@ -4,8 +4,9 @@
 # Created at <2025-02-28 Fri 23:17>
 
 
+from collections.abc import Iterable
 from datetime import date
-from typing import Iterable
+
 import github
 import pydash
 

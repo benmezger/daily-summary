@@ -1,13 +1,14 @@
+import sys
 from collections import defaultdict
 from datetime import date, datetime
 from os import getenv
 from typing import TextIO
-import click
-import sys
 
-from ._ollama import Ollama
+import click
+
 from ._github import Github
-from ._summary import write_summary, Summary
+from ._ollama import Ollama
+from ._summary import Summary, write_summary
 
 
 class Context:
