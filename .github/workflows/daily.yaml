@@ -24,7 +24,7 @@ jobs:
         id: summary
         run: |
           echo 'text<<EOF' >> $GITHUB_OUTPUT
-          uv run -m daily daily-summary --date $(date '+%Y-%m-%d') --no-ollama >> $GITHUB_OUTPUT
+          uv run task cli daily-summary --date $(date '+%Y-%m-%d') --no-ollama >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

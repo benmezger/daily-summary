@@ -16,4 +16,11 @@ dependencies = [
 dev = [
     "pyright>=1.1.395",
     "ruff>=0.9.9",
+    "taskipy>=1.14.1",
 ]
+
+[tool.taskipy.tasks]
+lint = "ruff check ."
+check_types = "pyright ."
+fmt = "ruff format . && ruff check --fix ."
+cli = "python -m daily"
