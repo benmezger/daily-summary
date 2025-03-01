@@ -23,7 +23,7 @@ def write_summary(repository_summaries: dict[str, list[Summary]], file: TextIO) 
         file.write(f"\n`{repository}`\n")
         for summary in summaries:
             url_tag = "PR" if summary.is_pr else "Issue"
-            file.write(f"- {summary.summary} [{url_tag}]({summary.url})\n")
+            file.write(f"- {summary.summary} [[{url_tag}]({summary.url})]\n")
 
     file.write("\n_Meetings_\n\n")
     file.write("- \n")

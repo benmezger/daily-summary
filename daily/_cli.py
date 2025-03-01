@@ -17,9 +17,10 @@ from ._ollama import Ollama
 from ._summary import Summary, write_summary
 
 
-class Context(NamedTuple):
+class _Context(NamedTuple):
     github: Github
     organization: str | None
+    username: str
 
 
 @click.group()
@@ -30,8 +31,10 @@ class Context(NamedTuple):
 def cli(
     ctx: click.Context, token: str, organization: str | None, username: str
 ) -> None:
-    ctx.obj = Context(
-        github=Github(token, username=username), organization=organization
+    ctx.obj = _Context(
+        github=Github(token, username=username),
+        organization=organization,
+        username=username,
     )
 
 
@@ -51,9 +54,15 @@ def cli(
     default=sys.stdout,
 )
 def list_issues(ctx: click.Context, date: date, file: TextIO) -> None:
-    context: Context = ctx.obj
-    for issue in context.github.issues_from(date, organization=context.organization):
-        file.write(f"{issue}\n")
+    context: _Context = ctx.obj
+    file.writelines(
+        [
+            f"{issue}\n"
+            for issue in context.github.issues_from(
+                date, organization=context.organization
+            )
+        ]
+    )
 
     file.close()
 
@@ -67,7 +76,7 @@ def list_issues(ctx: click.Context, date: date, file: TextIO) -> None:
 )
 @click.pass_context
 def account(ctx: click.Context, file: TextIO) -> None:
-    context: Context = ctx.obj
+    context: _Context = ctx.obj
     acc = context.github.get_user()
     file.write(f"{acc}\n")
     file.close()
@@ -105,7 +114,7 @@ def account(ctx: click.Context, file: TextIO) -> None:
 def daily_summary(
     ctx: click.Context, date: date, ollama_model: str, ollama: bool, file: TextIO
 ) -> None:
-    context: Context = ctx.obj
+    context: _Context = ctx.obj
 
     repository_summaries = defaultdict(list[Summary])
     for issue in list(
