@@ -40,7 +40,7 @@ class Github:
                 description=issue.body,
                 organization=organization,
                 merged=bool(pydash.get(issue, "pull_request.merged_at", False)),
-                url=issue.url,
+                url=issue.html_url,
                 created_at=issue.created_at,
                 updated_at=issue.updated_at,
                 repository=issue.repository.name,
