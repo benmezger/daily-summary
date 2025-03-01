@@ -19,18 +19,24 @@ from ._summary import Summary, write_summary
 
 class _Context(NamedTuple):
     github: Github
+    file: TextIO
 
 
 @click.group()
 @click.option("--token", default=getenv("GITHUB_TOKEN", ""), type=str, required=True)
 @click.option("--username", type=str, default="benmezger", show_default=True)
+@click.option(
+    "--file",
+    help="File to store output. Defaults to stdout",
+    type=click.File("w"),
+    default=sys.stdout,
+)
 @click.pass_context
-def cli(ctx: click.Context, token: str, username: str) -> None:
-    ctx.obj = _Context(github=Github(token, username=username))
+def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
+    ctx.obj = _Context(github=Github(token, username=username), file=file)
 
 
 @cli.command()
-@click.pass_context
 @click.option(
     "--date",
     type=click.DateTime(formats=("%Y-%m-%d",)),
@@ -38,32 +44,23 @@ def cli(ctx: click.Context, token: str, username: str) -> None:
     default=datetime.now().date().strftime("%Y-%m-%d"),
     show_default=True,
 )
-@click.option(
-    "--file",
-    help="File to store output. Defaults to stdout",
-    type=click.File("w"),
-    default=sys.stdout,
-)
-def list_issues(ctx: click.Context, date: date, file: TextIO) -> None:
+@click.pass_context
+def list_issues(ctx: click.Context, date: date) -> None:
     context: _Context = ctx.obj
-    file.writelines([f"{issue}\n" for issue in context.github.issues_from(date)])
+    context.file.writelines(
+        [f"{issue}\n" for issue in context.github.issues_from(date)]
+    )
 
-    file.close()
+    context.file.close()
 
 
 @cli.command()
-@click.option(
-    "--file",
-    help="File to store output. Defaults to stdout",
-    type=click.File("w"),
-    default=sys.stdout,
-)
 @click.pass_context
-def account(ctx: click.Context, file: TextIO) -> None:
+def account(ctx: click.Context) -> None:
     context: _Context = ctx.obj
     acc = context.github.get_user()
-    file.write(f"{acc}\n")
-    file.close()
+    context.file.write(f"{acc}\n")
+    context.file.close()
 
 
 @cli.command()
@@ -88,15 +85,9 @@ def account(ctx: click.Context, file: TextIO) -> None:
     show_default=True,
     help="Enable/Disable Ollama summary generation",
 )
-@click.option(
-    "--file",
-    help="File to store output. Defaults to stdout",
-    type=click.File("w"),
-    default=sys.stdout,
-)
 @click.pass_context
 def daily_summary(
-    ctx: click.Context, date: date, ollama_model: str, ollama: bool, file: TextIO
+    ctx: click.Context, date: date, ollama_model: str, ollama: bool
 ) -> None:
     context: _Context = ctx.obj
 
@@ -115,5 +106,5 @@ def daily_summary(
             )
         )
 
-    write_summary(repository_summaries, file)
-    file.close()
+    write_summary(repository_summaries, context.file)
+    context.file.close()
