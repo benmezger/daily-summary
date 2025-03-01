@@ -33,5 +33,13 @@ def list_prs(ctx: click.Context, date: date) -> None:
         print(issue)
 
 
+@cli.command()
+@click.pass_context
+def account(ctx: click.Context) -> None:
+    context: Context = ctx.obj
+    acc = context.github.get_user()
+    print(f"{acc.name} - @{acc.username}")
+
+
 if __name__ == "__main__":
     cli()
