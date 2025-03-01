@@ -39,3 +39,25 @@ lint.select = [
 ]
 target-version = "py311"
 extend-exclude = [".venv"]
+
+[tool.pyright]
+include = ["daily"]
+pythonVersion = "3.11"
+reportIncompatibleVariableOverride = true
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+reportUnusedImport = true
+reportDuplicateImport = true
+reportWildcardImportFromLibrary = true
+reportOptionalMemberAccess = false
+reportUntypedBaseClass = true
+reportPrivateUsage = true
+reportUntypedClassDecorator = true
+reportConstantRedefinition = true
+reportInvalidTypeVarUse = true
+reportUnnecessaryIsInstance = true
+reportUnnecessaryCast = true
+reportUnnecessaryComparison = true
+reportAssertAlwaysTrue = true
+reportUnusedCoroutine = true
