@@ -13,10 +13,11 @@ def summarize(prs: list[PR]) -> list[str]:
     summaries = []
     for pr in prs:
         content = pr.title
-        if pr.description:
-            content = pr.description
         summaries.append(
-            ollama.chat(f"Summarize this message in imperative mood: {content}")
+            ollama.chat(
+                f"Summarize this message in imperative mood in a "
+                f"single sentence: {content}"
+            )
         )
 
     return list(filter(None, summaries))
