@@ -75,7 +75,7 @@ def daily_summary(
     ):
         ordered_issues[issue.repository].append(issue)
 
-    print("Engineering")
+    print("_Engineering_")
     for repository, issues in ordered_issues.items():
         if not issues:
             continue
@@ -92,10 +92,10 @@ def daily_summary(
 
         print()
 
-    print("Meetings")
+    print("_Meetings_")
     print("    * ")
 
-    print("Misc")
+    print("_Misc_")
     print("    * PR reviews and discussions")
 
 
