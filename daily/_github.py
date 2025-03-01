@@ -28,7 +28,7 @@ class Github:
         created_at: date,
         organization: str | None = None,
     ) -> Iterable[Issue]:
-        query = f"author:{self._user.login} type:pr created:{created_at:%Y-%m-%d}"
+        query = f"author:{self._user.login} created:{created_at:%Y-%m-%d}"
         if organization:
             query = f"{query} org:{organization}"
 
