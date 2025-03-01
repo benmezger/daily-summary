@@ -1,12 +1,15 @@
 from collections import defaultdict
 from datetime import date, datetime
 from os import getenv
+from typing import TextIO
 import click
+import sys
 
 from daily.models import PR
 
 from ._ollama import Ollama
 from ._github import Github
+from ._summary import write_summary, Summary
 
 
 class Context:
@@ -68,9 +71,15 @@ def account(ctx: click.Context) -> None:
     show_default=True,
     help="Enable/Disable Ollama summary generation",
 )
+@click.option(
+    "--file",
+    help="File to store output. Defaults to stdout",
+    type=click.File("w"),
+    default=sys.stdout,
+)
 @click.pass_context
 def daily_summary(
-    ctx: click.Context, date: date, ollama_model: str, ollama: bool
+    ctx: click.Context, date: date, ollama_model: str, ollama: bool, file: TextIO
 ) -> None:
     context: Context = ctx.obj
     ordered_issues = defaultdict(list[PR])
@@ -79,28 +88,21 @@ def daily_summary(
     ):
         ordered_issues[issue.repository].append(issue)
 
-    print("_Engineering_")
+    repository_summaries = defaultdict(list[Summary])
     for repository, issues in ordered_issues.items():
         if not issues:
             continue
 
-        print(f"* `{repository}`")
         for issue in issues:
-            if ollama:
-                print(
-                    f"    ** {issue.summarize(ollama=Ollama(ollama_model))} "
-                    f"[PR]({issue.url})"
+            repository_summaries[repository].append(
+                Summary(
+                    summary=issue.summarize(ollama=Ollama(ollama_model))
+                    if ollama
+                    else issue.title,
+                    pr_url=issue.url,
                 )
-            else:
-                print(f"    ** {issue.title} [PR]({issue.url})")
-
-        print()
-
-    print("_Meetings_")
-    print("    * ")
-
-    print("_Misc_")
-    print("    * PR reviews and discussions")
+            )
+    write_summary(repository_summaries, file)
 
 
 if __name__ == "__main__":
