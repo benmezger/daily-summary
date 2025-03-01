@@ -30,6 +30,7 @@ def cli(ctx: click.Context, token: str, organization: str | None) -> None:
     type=click.DateTime(formats=("%Y-%m-%d",)),
     required=True,
     default=datetime.now().date().strftime("%Y-%m-%d"),
+    show_default=True,
 )
 def list_prs(ctx: click.Context, date: date) -> None:
     context: Context = ctx.obj
@@ -51,17 +52,20 @@ def account(ctx: click.Context) -> None:
     type=click.DateTime(formats=("%Y-%m-%d",)),
     required=True,
     default=datetime.now().date().strftime("%Y-%m-%d"),
+    show_default=True,
 )
 @click.option(
     "--ollama-model",
     type=str,
     required=True,
+    show_default=True,
     default="mistral",
 )
 @click.option(
     "--ollama/--no-ollama",
     is_flag=True,
     default=True,
+    show_default=True,
     help="Enable/Disable Ollama summary generation",
 )
 @click.pass_context
