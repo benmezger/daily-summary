@@ -5,8 +5,6 @@ from typing import TextIO
 import click
 import sys
 
-from daily.models import PR
-
 from ._ollama import Ollama
 from ._github import Github
 from ._summary import write_summary, Summary
@@ -82,26 +80,20 @@ def daily_summary(
     ctx: click.Context, date: date, ollama_model: str, ollama: bool, file: TextIO
 ) -> None:
     context: Context = ctx.obj
-    ordered_issues = defaultdict(list[PR])
+
+    repository_summaries = defaultdict(list[Summary])
     for issue in list(
         context.github.issues_from(date, organization=context.organization)
     ):
-        ordered_issues[issue.repository].append(issue)
-
-    repository_summaries = defaultdict(list[Summary])
-    for repository, issues in ordered_issues.items():
-        if not issues:
-            continue
-
-        for issue in issues:
-            repository_summaries[repository].append(
-                Summary(
-                    summary=issue.summarize(ollama=Ollama(ollama_model))
-                    if ollama
-                    else issue.title,
-                    pr_url=issue.url,
-                )
+        repository_summaries[issue.repository].append(
+            Summary(
+                summary=issue.summarize(ollama=Ollama(ollama_model))
+                if ollama
+                else issue.title,
+                pr_url=issue.url,
             )
+        )
+
     write_summary(repository_summaries, file)
 
 
