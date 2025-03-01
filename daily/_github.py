@@ -9,7 +9,7 @@ from typing import Iterable
 import github
 import pydash
 
-from daily.models import PR, User
+from daily.models import Issue, User
 
 
 class Github:
@@ -27,13 +27,13 @@ class Github:
         self,
         created_at: date,
         organization: str | None = None,
-    ) -> Iterable[PR]:
+    ) -> Iterable[Issue]:
         query = f"author:{self._user.login} type:pr created:{created_at:%Y-%m-%d}"
         if organization:
             query = f"{query} org:{organization}"
 
         for issue in self._github.search_issues(query):
-            yield PR(
+            yield Issue(
                 title=issue.title,
                 description=issue.body,
                 organization=organization,

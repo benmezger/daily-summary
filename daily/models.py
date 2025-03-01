@@ -13,7 +13,7 @@ class User(BaseModel):
     name: str
 
 
-class PR(BaseModel):
+class Issue(BaseModel):
     title: str
     description: str
     organization: str | None = None
