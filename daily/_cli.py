@@ -23,9 +23,22 @@ class _Context(NamedTuple):
 
 
 @click.group()
-@click.option("--token", default=getenv("GITHUB_TOKEN", ""), type=str, required=True)
-@click.option("--username", type=str, default="benmezger", show_default=True)
 @click.option(
+    "-t",
+    "--token",
+    default=getenv("GITHUB_TOKEN", ""),
+    type=str,
+    required=True,
+)
+@click.option(
+    "-u",
+    "--username",
+    type=str,
+    default="benmezger",
+    show_default=True,
+)
+@click.option(
+    "-f",
     "--file",
     help="File to store output. Defaults to stdout",
     type=click.File("w"),
@@ -38,6 +51,7 @@ def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
 
 @cli.command()
 @click.option(
+    "-d",
     "--date",
     type=click.DateTime(formats=("%Y-%m-%d",)),
     required=True,
@@ -65,6 +79,7 @@ def account(ctx: click.Context) -> None:
 
 @cli.command()
 @click.option(
+    "-d",
     "--date",
     type=click.DateTime(formats=("%Y-%m-%d",)),
     required=True,
