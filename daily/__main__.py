@@ -58,8 +58,16 @@ def account(ctx: click.Context) -> None:
     required=True,
     default="mistral",
 )
+@click.option(
+    "--ollama/--no-ollama",
+    is_flag=True,
+    default=True,
+    help="Enable/Disable Ollama summary generation",
+)
 @click.pass_context
-def daily_summary(ctx: click.Context, date: date, ollama_model: str) -> None:
+def daily_summary(
+    ctx: click.Context, date: date, ollama_model: str, ollama: bool
+) -> None:
     context: Context = ctx.obj
     ordered_issues = defaultdict(list[PR])
     for issue in list(
@@ -74,10 +82,14 @@ def daily_summary(ctx: click.Context, date: date, ollama_model: str) -> None:
 
         print(f"* `{repository}`")
         for issue in issues:
-            print(
-                f"    ** {issue.summarize(ollama=Ollama(ollama_model))}"
-                f"[PR]({issue.url})"
-            )
+            if ollama:
+                print(
+                    f"    ** {issue.summarize(ollama=Ollama(ollama_model))} "
+                    f"[PR]({issue.url})"
+                )
+            else:
+                print(f"    ** {issue.title} [PR]({issue.url})")
+
         print()
 
     print("Meetings")
