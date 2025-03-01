@@ -19,9 +19,14 @@ class Context:
 @click.group()
 @click.option("--token", default=getenv("GITHUB_TOKEN", ""), type=str, required=True)
 @click.option("--organization", type=str)
+@click.option("--username", type=str, default="benmezger", show_default=True)
 @click.pass_context
-def cli(ctx: click.Context, token: str, organization: str | None) -> None:
-    ctx.obj = Context(github=Github(token), organization=organization)
+def cli(
+    ctx: click.Context, token: str, organization: str | None, username: str
+) -> None:
+    ctx.obj = Context(
+        github=Github(token, username=username), organization=organization
+    )
 
 
 @cli.command()

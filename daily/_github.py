@@ -13,9 +13,10 @@ from daily.models import Issue, User
 
 
 class Github:
-    def __init__(self, access_token: str) -> None:
+    def __init__(self, access_token: str, username: str) -> None:
         auth = github.Auth.Token(access_token)
 
+        self.username = username
         self._github = github.Github(auth=auth)
         self._user = self._github.get_user()
 
@@ -28,7 +29,7 @@ class Github:
         created_at: date,
         organization: str | None = None,
     ) -> Iterable[Issue]:
-        query = f"author:{self._user.login} created:{created_at:%Y-%m-%d}"
+        query = f"author:{self.username} created:{created_at:%Y-%m-%d}"
         if organization:
             query = f"{query} org:{organization}"
 
