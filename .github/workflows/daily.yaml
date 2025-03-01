@@ -27,7 +27,7 @@ jobs:
           uv run task cli daily-summary --date $(date '+%Y-%m-%d') --no-ollama >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - run: |
           gh issue --repo "${{ github.repository }}" create \
