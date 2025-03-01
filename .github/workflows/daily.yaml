@@ -1,0 +1,24 @@
+name: Create daily summary
+on: ["push"]
+
+jobs:
+  create-summary:
+    runs-on: ubuntu-latest
+    permissions: read-all
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install project dependencies
+        run: uv sync
+
+      - name: Generate daily summary
+        run: |
+          uv run -m daily daily-summary --date $(date "+%Y-%m-%d") --no-ollama
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
