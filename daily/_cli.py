@@ -19,23 +19,15 @@ from ._summary import Summary, write_summary
 
 class _Context(NamedTuple):
     github: Github
-    organization: str | None
     username: str
 
 
 @click.group()
 @click.option("--token", default=getenv("GITHUB_TOKEN", ""), type=str, required=True)
-@click.option("--organization", type=str)
 @click.option("--username", type=str, default="benmezger", show_default=True)
 @click.pass_context
-def cli(
-    ctx: click.Context, token: str, organization: str | None, username: str
-) -> None:
-    ctx.obj = _Context(
-        github=Github(token, username=username),
-        organization=organization,
-        username=username,
-    )
+def cli(ctx: click.Context, token: str, username: str) -> None:
+    ctx.obj = _Context(github=Github(token, username=username), username=username)
 
 
 @cli.command()
@@ -55,14 +47,7 @@ def cli(
 )
 def list_issues(ctx: click.Context, date: date, file: TextIO) -> None:
     context: _Context = ctx.obj
-    file.writelines(
-        [
-            f"{issue}\n"
-            for issue in context.github.issues_from(
-                date, organization=context.organization
-            )
-        ]
-    )
+    file.writelines([f"{issue}\n" for issue in context.github.issues_from(date)])
 
     file.close()
 
@@ -117,9 +102,7 @@ def daily_summary(
     context: _Context = ctx.obj
 
     repository_summaries = defaultdict(list[Summary])
-    for issue in list(
-        context.github.issues_from(date, organization=context.organization)
-    ):
+    for issue in list(context.github.issues_from(date)):
         repository_summaries[issue.repository].append(
             Summary(
                 summary=(
@@ -129,6 +112,7 @@ def daily_summary(
                 ).strip(),
                 url=issue.url.strip(),
                 is_pr=issue.is_pr,
+                organization=issue.organization,
             )
         )
 

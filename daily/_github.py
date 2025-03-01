@@ -4,6 +4,7 @@
 # Created at <2025-02-28 Fri 23:17>
 
 
+import re
 from collections.abc import Iterable
 from datetime import date
 
@@ -28,13 +29,16 @@ class Github:
     def issues_from(
         self,
         created_at: date,
-        organization: str | None = None,
     ) -> Iterable[Issue]:
         query = f"author:{self.username} created:{created_at:%Y-%m-%d}"
-        if organization:
-            query = f"{query} org:{organization}"
 
         for issue in self._github.search_issues(query):
+            # we use the following regex to avoid using issue.pull_request
+            # since it makes a request to it
+            organization, repository_name = re.search(
+                r"github\.com/([^/]+)/([^/]+)", issue.html_url
+            ).groups()
+
             yield Issue(
                 title=issue.title,
                 description=issue.body,
@@ -43,6 +47,6 @@ class Github:
                 url=issue.html_url,
                 created_at=issue.created_at,
                 updated_at=issue.updated_at,
-                repository=issue.repository.name,
-                is_pr=bool(issue.pull_request),
+                repository=repository_name,
+                is_pr="pr_" in issue.node_id.lower(),
             )

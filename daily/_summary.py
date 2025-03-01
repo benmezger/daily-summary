@@ -13,6 +13,7 @@ class Summary(BaseModel):
     summary: str
     url: str
     is_pr: bool
+    organization: str
 
 
 def write_summary(repository_summaries: dict[str, list[Summary]], file: TextIO) -> None:

@@ -21,7 +21,7 @@ class User(BaseModel):
 class Issue(BaseModel):
     title: str
     description: str | None
-    organization: str | None = None
+    organization: str
     merged: bool
     url: str
     created_at: datetime
