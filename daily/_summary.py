@@ -4,6 +4,7 @@
 # Created at <2025-03-01 Sat 17:44>
 
 from typing import TextIO
+from datetime import datetime
 
 from pydantic.main import BaseModel
 
@@ -15,6 +16,7 @@ class Summary(BaseModel):
 
 
 def write_summary(repository_summaries: dict[str, list[Summary]], file: TextIO) -> None:
+    file.write(f"Summary of *{datetime.now():%Y-%m-%d}*\n")
     file.write("_Engineering_\n")
 
     for repository, summaries in repository_summaries.items():
