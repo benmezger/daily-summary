@@ -10,13 +10,13 @@
 ### Listing todays PR
 
 ``` sh
-uv run python -m daily list-prs
+uv run python -m daily list-issues
 ```
 
 ### Listing PRs on a specific date
 
 ``` sh
-uv run python -m daily list-prs --date 2025-02-28
+uv run python -m daily list-issues --date 2025-02-28
 ```
 
 ### Showing account

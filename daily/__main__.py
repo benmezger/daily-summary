@@ -33,10 +33,18 @@ def cli(ctx: click.Context, token: str, organization: str | None) -> None:
     default=datetime.now().date().strftime("%Y-%m-%d"),
     show_default=True,
 )
-def list_prs(ctx: click.Context, date: date) -> None:
+@click.option(
+    "--file",
+    help="File to store output. Defaults to stdout",
+    type=click.File("w"),
+    default=sys.stdout,
+)
+def list_issues(ctx: click.Context, date: date, file: TextIO) -> None:
     context: Context = ctx.obj
     for issue in context.github.issues_from(date, organization=context.organization):
-        print(issue)
+        file.write(f"{issue}\n")
+
+    file.close()
 
 
 @cli.command()
