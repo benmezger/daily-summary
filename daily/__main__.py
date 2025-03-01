@@ -4,8 +4,8 @@ from os import getenv
 import click
 
 from daily.models import PR
-from ._summary import summarize
 
+from ._ollama import Ollama
 from ._github import Github
 
 
@@ -52,8 +52,14 @@ def account(ctx: click.Context) -> None:
     required=True,
     default=datetime.now().date().strftime("%Y-%m-%d"),
 )
+@click.option(
+    "--ollama-model",
+    type=str,
+    required=True,
+    default="mistral",
+)
 @click.pass_context
-def daily_summary(ctx: click.Context, date: date) -> None:
+def daily_summary(ctx: click.Context, date: date, ollama_model: str) -> None:
     context: Context = ctx.obj
     ordered_issues = defaultdict(list[PR])
     for issue in list(
@@ -66,9 +72,12 @@ def daily_summary(ctx: click.Context, date: date) -> None:
         if not issues:
             continue
 
-        print(f"* {repository}")
-        for summary in summarize(issues):
-            print(f"    ** {summary}")
+        print(f"* `{repository}`")
+        for issue in issues:
+            print(
+                f"    ** {issue.summarize(ollama=Ollama(ollama_model))}"
+                f"[PR]({issue.url})"
+            )
         print()
 
 

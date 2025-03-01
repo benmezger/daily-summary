@@ -5,6 +5,7 @@
 
 from datetime import datetime
 from pydantic import BaseModel
+from ._ollama import Ollama
 
 
 class User(BaseModel):
@@ -24,3 +25,9 @@ class PR(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.title} @{self.repository} - {self.created_at}"
+
+    def summarize(self, ollama: Ollama) -> str:
+        return ollama.chat(
+            f"Summarize this message using imperative mood in a single sentence: "
+            f"{self.title}"
+        )
