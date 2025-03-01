@@ -105,6 +105,7 @@ def daily_summary(
         )
 
     write_summary(repository_summaries, file)
+    file.close()
 
 
 if __name__ == "__main__":
