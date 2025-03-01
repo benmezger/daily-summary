@@ -87,10 +87,13 @@ def daily_summary(
     ):
         repository_summaries[issue.repository].append(
             Summary(
-                summary=issue.summarize(ollama=Ollama(ollama_model))
-                if ollama
-                else issue.title,
-                pr_url=issue.url,
+                summary=(
+                    issue.summarize(ollama=Ollama(ollama_model))
+                    if ollama
+                    else issue.title
+                ).strip(),
+                url=issue.url.strip(),
+                is_pr=issue.is_pr,
             )
         )
 

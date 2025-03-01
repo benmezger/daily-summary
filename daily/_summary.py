@@ -10,7 +10,8 @@ from pydantic.main import BaseModel
 
 class Summary(BaseModel):
     summary: str
-    pr_url: str
+    url: str
+    is_pr: bool
 
 
 def write_summary(repository_summaries: dict[str, list[Summary]], file: TextIO) -> None:
@@ -19,7 +20,8 @@ def write_summary(repository_summaries: dict[str, list[Summary]], file: TextIO) 
     for repository, summaries in repository_summaries.items():
         file.write(f"* `{repository}`\n")
         for summary in summaries:
-            file.write(f"    ** {summary.summary} [PR]({summary.pr_url})\n")
+            url_tag = "PR" if summary.is_pr else "Issue"
+            file.write(f"    ** {summary.summary} [{url_tag}]({summary.url})\n")
 
     file.write("_Meetings_\n")
     file.write("    * \n")

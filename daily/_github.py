@@ -42,4 +42,5 @@ class Github:
                 created_at=issue.created_at,
                 updated_at=issue.updated_at,
                 repository=issue.repository.name,
+                is_pr=bool(issue.pull_request),
             )

@@ -22,6 +22,7 @@ class Issue(BaseModel):
     created_at: datetime
     updated_at: datetime
     repository: str
+    is_pr: bool
 
     def __str__(self) -> str:
         return f"{self.title} @{self.repository} - {self.created_at}"
