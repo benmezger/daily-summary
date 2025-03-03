@@ -8,6 +8,9 @@ jobs:
   create-summary:
     runs-on: ubuntu-latest
     permissions: write-all
+    concurrency:
+      group: daily
+      cancel-in-progress: true
     env:
       SUMMARY_REPOSITORY: "benmezger/summaries"
       SUMMARY_ASSIGNEE: "benmezger"
