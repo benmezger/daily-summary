@@ -11,7 +11,7 @@ from datetime import date
 import github
 import pydash
 
-from daily.models import Issue, User
+from daily.models import EventType, GithubEvent, User
 
 
 class Github:
@@ -29,7 +29,7 @@ class Github:
     def issues_from(
         self,
         created_at: date,
-    ) -> Iterable[Issue]:
+    ) -> Iterable[GithubEvent]:
         query = f"author:{self.username} created:{created_at:%Y-%m-%d}"
 
         for issue in self._github.search_issues(query):
@@ -39,7 +39,7 @@ class Github:
                 r"github\.com/([^/]+)/([^/]+)", issue.html_url
             ).groups()
 
-            yield Issue(
+            yield GithubEvent(
                 title=issue.title,
                 description=issue.body,
                 organization=organization,
@@ -48,5 +48,34 @@ class Github:
                 created_at=issue.created_at,
                 updated_at=issue.updated_at,
                 repository=repository_name,
-                is_pr="pr_" in issue.node_id.lower(),
+                event_type=EventType.PULL_REQUEST
+                if "pr_" in issue.node_id.lower()
+                else EventType.ISSUE,
+            )
+
+    def commits_from(
+        self,
+        created_at: date,
+    ) -> Iterable[GithubEvent]:
+        query = f"author:{self.username} committer-date:{created_at:%Y-%m-%d}"
+
+        for commit in self._github.search_commits(query, sort="committer-date"):
+            title: str
+            description: str | None = None
+
+            if len(parts := commit.commit.message.splitlines()) > 1:
+                title = parts[0]
+                description = "".join(parts[1:])
+            else:
+                title = parts[0]
+
+            yield GithubEvent(
+                title=title,
+                description=description,
+                sha=commit.sha,
+                url=commit.html_url,
+                repository=commit.repository.name,
+                organization=commit.repository.full_name.split("/")[0],
+                created_at=commit.commit.author.date,
+                event_type=EventType.COMMIT,
             )

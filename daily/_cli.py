@@ -12,9 +12,16 @@ from typing import NamedTuple, TextIO
 
 import click
 
+from daily.models import RepositoryEvents
+
 from ._github import Github
 from ._ollama import Ollama
-from ._summary import Summary, write_summary
+from ._summary import (
+    maybe_write_commit_summary,
+    maybe_write_header,
+    maybe_write_issue_summary,
+    maybe_write_misc,
+)
 
 
 class _Context(NamedTuple):
@@ -106,20 +113,29 @@ def daily_summary(
 ) -> None:
     context: _Context = ctx.obj
 
-    repository_summaries = defaultdict(list[Summary])
-    for issue in list(context.github.issues_from(date)):
-        repository_summaries[issue.repository].append(
-            Summary(
-                summary=(
-                    issue.summarize(ollama=Ollama(ollama_model))
-                    if ollama
-                    else issue.title
-                ).strip(),
-                url=issue.url.strip(),
-                is_pr=issue.is_pr,
-                organization=issue.organization,
+    repository_events = defaultdict(list)
+
+    for event in list(context.github.issues_from(date)) + list(
+        context.github.commits_from(date)
+    ):
+        repository_events[event.repository].append(event)
+
+    events = list[RepositoryEvents]()
+    for repository, evts in repository_events.items():
+        organization: str = evts[0].organization
+        events.append(
+            RepositoryEvents(
+                repository=repository, events=evts, organization=organization
             )
         )
 
-    write_summary(repository_summaries, context.file)
+    ollama_handler: Ollama | None = None
+    if ollama:
+        ollama_handler = Ollama(ollama_model)
+
+    maybe_write_header(events, context.file)
+    maybe_write_issue_summary(events, ollama_handler, context.file)
+    maybe_write_commit_summary(events, context.file)
+    maybe_write_misc(events, context.file)
+
     context.file.close()
