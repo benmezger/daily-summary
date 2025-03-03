@@ -30,20 +30,22 @@ jobs:
       - name: Generate daily summary
         id: summary
         run: |
-          echo 'text<<EOF' >> $GITHUB_OUTPUT
-          uv run task cli daily-summary --date $(date '+%Y-%m-%d') --no-ollama >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          uv run task cli --file daily.md daily-summary --date $(date '+%Y-%m-%d') --no-ollama
+
+          while IFS= read -r line || [[ -n "$line" ]]; do
+            if [[ -n "$line" ]]; then
+              echo "::add-mask::$line"
+            fi
+          done < daily.md
+
+          {
+            echo "text<<EOF"
+            cat daily.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Maybe mask each line of the summary
-        if: ${{ steps.summary.outputs.text }}
-        run: |
-          while IFS= read -r line; do
-            if [[ -n "$line" ]]; then
-              echo "::add-mask::$(echo "$line" | sed 's/`/\\`/g')"
-            fi
-          done <<< "${{ steps.summary.outputs.text }}"
 
       - name: Maybe post issue
         if: ${{ steps.summary.outputs.text }}
