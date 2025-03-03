@@ -17,6 +17,9 @@ class Summary(BaseModel):
 
 
 def write_summary(repository_summaries: dict[str, list[Summary]], file: TextIO) -> None:
+    if not repository_summaries:
+        return
+
     file.write(f"Summary of *{datetime.now():%Y-%m-%d}*\n")
     file.write("\n_Engineering_\n")
 
