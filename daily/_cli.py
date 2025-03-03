@@ -120,18 +120,14 @@ def daily_summary(
     ):
         repository_events[event.repository].append(event)
 
-    events = list[RepositoryEvents]()
-    for repository, evts in repository_events.items():
-        organization: str = evts[0].organization
-        events.append(
-            RepositoryEvents(
-                repository=repository, events=evts, organization=organization
-            )
+    events = [
+        RepositoryEvents(
+            repository=repo, events=evts, organization=evts[0].organization
         )
+        for repo, evts in repository_events.items()
+    ]
 
-    ollama_handler: Ollama | None = None
-    if ollama:
-        ollama_handler = Ollama(ollama_model)
+    ollama_handler = Ollama(ollama_model) if ollama else None
 
     maybe_write_header(events, context.file)
     maybe_write_issue_summary(events, ollama_handler, context.file)
