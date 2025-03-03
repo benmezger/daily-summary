@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     env:
-      SUMMARY_REPOSITORY: "${{ github.repository }}"
+      SUMMARY_REPOSITORY: "benmezger/summaries"
     steps:
       - uses: actions/checkout@v4
 
