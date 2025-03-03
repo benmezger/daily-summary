@@ -8,6 +8,8 @@ jobs:
   create-summary:
     runs-on: ubuntu-latest
     permissions: write-all
+    env:
+      SUMMARY_REPOSITORY: "${{ github.repository }}"
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +43,7 @@ jobs:
       - name: Maybe post issue
         if: ${{ steps.summary.outputs.text }}
         run: |
-          gh issue --repo "${{ github.repository }}" create \
+          gh issue --repo "$SUMMARY_REPOSITORY" create \
             --title "Daily Summary of $(date '+%Y-%m-%d')" \
             --body "${{ steps.summary.outputs.text }}" \
             --assignee benmezger \
