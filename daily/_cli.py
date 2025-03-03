@@ -69,7 +69,26 @@ def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
 def list_issues(ctx: click.Context, date: date) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
-        [f"{issue}\n" for issue in context.github.issues_from(date)]
+        [f"{event}\n" for event in context.github.issues_from(date)]
+    )
+
+    context.file.close()
+
+
+@cli.command()
+@click.option(
+    "-d",
+    "--date",
+    type=click.DateTime(formats=("%Y-%m-%d", "%d-%m-%Y")),
+    required=True,
+    default=datetime.now().date().strftime("%d-%m-%Y"),
+    show_default=True,
+)
+@click.pass_context
+def list_commits(ctx: click.Context, date: date) -> None:
+    context: _Context = ctx.obj
+    context.file.writelines(
+        [f"{event}\n" for event in context.github.commits_from(date)]
     )
 
     context.file.close()
