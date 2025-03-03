@@ -29,6 +29,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
+      - name: Maybe mask each line of the summary
+        if: ${{ steps.summary.outputs.text }}
+        run: |
+          while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+              echo "::add-mask::$(echo "$line" | sed 's/`/\\`/g')"
+            fi
+          done <<< "${{ steps.summary.outputs.text }}"
+
       - name: Maybe post issue
         if: ${{ steps.summary.outputs.text }}
         run: |
