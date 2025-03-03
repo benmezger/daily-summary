@@ -29,7 +29,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - run: |
+      - name: Maybe post issue
+        if: ${{ steps.summary.outputs.text }}
+        run: |
           gh issue --repo "${{ github.repository }}" create \
             --title "Daily Summary of $(date '+%Y-%m-%d')" \
             --body "${{ steps.summary.outputs.text }}" \
