@@ -1,5 +1,7 @@
 name: Create daily summary
 on:
+  pull_request:
+    types: [opened, reopened]
   workflow_dispatch:
   schedule:
     # 17:00 UTC = 18:00 CET (Winter) / 19:00 CEST (Summer)
