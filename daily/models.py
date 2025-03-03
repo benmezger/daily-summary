@@ -5,10 +5,9 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import BaseModel
-from pydantic.fields import Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from ._ollama import Ollama
 
@@ -50,7 +49,10 @@ class GithubEvent(BaseModel):
 
 
 class Summary(BaseModel):
-    summary: str
+    title: Annotated[
+        str,
+        BeforeValidator(lambda value: value.replace('"', '\\"').replace("`", "\\`")),
+    ]
     url: str
     event_type: EventType
     organization: str
@@ -59,14 +61,14 @@ class Summary(BaseModel):
     def from_event(cls: type[Self], event: GithubEvent, ollama: Ollama | None) -> Self:
         if event.event_type in (EventType.ISSUE, EventType.PULL_REQUEST):
             return cls(
-                summary=(event.summarize(ollama) if ollama else event.title).strip(),
+                title=(event.summarize(ollama) if ollama else event.title).strip(),
                 url=event.url.strip(),
                 event_type=event.event_type,
                 organization=event.organization,
             )
 
         return cls(
-            summary=event.title,
+            title=event.title,
             url=event.url,
             event_type=event.event_type,
             organization=event.organization,

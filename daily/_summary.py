@@ -38,9 +38,9 @@ def maybe_write_issue_summary(
 
             for evt in events:
                 summary = Summary.from_event(evt, ollama)
-                title = summary.summary.replace('"', '\\"').replace("`", "\\`")
                 file.write(
-                    f"  - {title} [[{summary.event_type.value}]({summary.url})]\n"
+                    f"  - {summary.title} "
+                    f"[[{summary.event_type.value}]({summary.url})]\n"
                 )
 
 
@@ -69,9 +69,9 @@ def maybe_write_commit_summary(
 
             for evt in events:
                 summary = Summary.from_event(evt, None)
-                title = summary.summary.replace('"', '\\"').replace("`", "\\`")
                 file.write(
-                    f"  - {title} [[{summary.event_type.value}]({summary.url})]\n"
+                    f"  - {summary.title} "
+                    f"[[{summary.event_type.value}]({summary.url})]\n"
                 )
 
 
