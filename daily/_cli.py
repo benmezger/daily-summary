@@ -60,9 +60,9 @@ def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
 @click.option(
     "-d",
     "--date",
-    type=click.DateTime(formats=("%Y-%m-%d",)),
+    type=click.DateTime(formats=("%Y-%m-%d", "%d-%m-%Y")),
     required=True,
-    default=datetime.now().date().strftime("%Y-%m-%d"),
+    default=datetime.now().date().strftime("%d-%m-%Y"),
     show_default=True,
 )
 @click.pass_context
@@ -88,9 +88,9 @@ def account(ctx: click.Context) -> None:
 @click.option(
     "-d",
     "--date",
-    type=click.DateTime(formats=("%Y-%m-%d",)),
+    type=click.DateTime(formats=("%Y-%m-%d", "%d-%m-%Y")),
     required=True,
-    default=datetime.now().date().strftime("%Y-%m-%d"),
+    default=datetime.now().date().strftime("%d-%m-%Y"),
     show_default=True,
 )
 @click.option(
