@@ -8,7 +8,7 @@ execution, submitting the report as a GitHub issue.
 
 ## Requirements
 1. Ollama installed
-2. Ollama `mistral` model
+2. Ollama `mistral` model (_optional_)
 3. Python + UV
 
 ## Creating a Github token
