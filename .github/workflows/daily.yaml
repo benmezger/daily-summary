@@ -2,8 +2,8 @@ name: Create daily summary
 on:
   workflow_dispatch:
   schedule:
-    # 17:00 UTC = 18:00 CET (Winter) / 19:00 CEST (Summer)
-    - cron: "0 17 * * *"
+    # 20:00 UTC = 21:00 CET (Winter) / 22:00 CEST (Summer)
+    - cron: "0 20 * * *"
 
 jobs:
   create-summary:
