@@ -37,6 +37,7 @@ class GithubEvent(BaseModel):
     repository: str
     sha: str | None = None
     event_type: EventType
+    state: str | None = None
 
     def __str__(self) -> str:
         return f"{self.title} @{self.repository} - {self.created_at}"
@@ -56,6 +57,7 @@ class Summary(BaseModel):
     url: str
     event_type: EventType
     organization: str
+    state: str | None
 
     @classmethod
     def from_event(cls: type[Self], event: GithubEvent, ollama: Ollama | None) -> Self:
@@ -68,6 +70,7 @@ class Summary(BaseModel):
             url=event.url.strip(),
             event_type=event.event_type,
             organization=event.organization,
+            state=event.state,
         )
 
 

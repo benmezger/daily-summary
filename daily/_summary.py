@@ -40,7 +40,8 @@ def maybe_write_issue_summary(
                 summary = Summary.from_event(evt, ollama)
                 file.write(
                     f"  - {summary.title} "
-                    f"[[{summary.event_type.value}]({summary.url})]\n"
+                    f"[[{summary.event_type.value}]({summary.url})] "
+                    f"/ [{summary.state}]\n"
                 )
 
 

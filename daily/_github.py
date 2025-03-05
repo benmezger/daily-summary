@@ -39,11 +39,12 @@ class Github:
                 r"github\.com/([^/]+)/([^/]+)", issue.html_url
             ).groups()
 
+            merged = bool(pydash.get(issue, "pull_request.merged_at", False))
             yield GithubEvent(
                 title=issue.title,
                 description=issue.body,
                 organization=organization,
-                merged=bool(pydash.get(issue, "pull_request.merged_at", False)),
+                merged=merged,
                 url=issue.html_url,
                 created_at=issue.created_at,
                 updated_at=issue.updated_at,
@@ -51,6 +52,7 @@ class Github:
                 event_type=EventType.PULL_REQUEST
                 if "pr_" in issue.node_id.lower()
                 else EventType.ISSUE,
+                state="merged" if merged else issue.state,
             )
 
     def commits_from(
