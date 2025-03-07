@@ -15,6 +15,7 @@ jobs:
     env:
       SUMMARY_REPOSITORY: "benmezger/summaries"
       SUMMARY_ASSIGNEE: "benmezger"
+      TIMEZONE: "Europe/Amsterdam"
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +34,9 @@ jobs:
       - name: Install project dependencies
         if: steps.setup-uv.outputs.cache-hit != 'true'
         run: uv sync
+
+      - name: Set timezone
+        run: sudo timedatectl set-timezone "$TIMEZONE"
 
       - name: Generate daily summary
         id: summary
