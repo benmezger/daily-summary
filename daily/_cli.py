@@ -162,7 +162,7 @@ def daily_summary(
 
     ollama_handler = Ollama(ollama_model) if ollama else None
 
-    maybe_write_header(events, context.file)
+    maybe_write_header(events, context.file, filter_date)
     maybe_write_issue_summary(events, ollama_handler, context.file)
     maybe_write_commit_summary(events, context.file)
     maybe_write_misc(events, context.file)

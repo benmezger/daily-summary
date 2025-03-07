@@ -3,8 +3,8 @@
 # Author: Ben Mezger <me@benmezger.nl>
 # Created at <2025-03-01 Sat 17:44>
 
+import datetime
 from collections import defaultdict
-from datetime import datetime
 from typing import TextIO
 
 from daily.models import EventType, GithubEvent, RepositoryEvents, Summary
@@ -12,11 +12,13 @@ from daily.models import EventType, GithubEvent, RepositoryEvents, Summary
 from ._ollama import Ollama
 
 
-def maybe_write_header(events: list[RepositoryEvents], file: TextIO) -> None:
+def maybe_write_header(
+    events: list[RepositoryEvents], file: TextIO, date: datetime.date
+) -> None:
     if not events:
         return
 
-    file.write(f"Summary of *{datetime.now():%Y-%m-%d}*\n")
+    file.write(f"Summary of *{date:%Y-%m-%d}*\n")
 
 
 def maybe_write_issue_summary(
