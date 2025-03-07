@@ -6,7 +6,7 @@
 
 import sys
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from os import getenv
 from typing import NamedTuple, TextIO
 
@@ -126,16 +126,30 @@ def account(ctx: click.Context) -> None:
     show_default=True,
     help="Enable/Disable Ollama summary generation",
 )
+@click.option(
+    "-y",
+    "--yesterday",
+    is_flag=True,
+    show_default=True,
+)
 @click.pass_context
 def daily_summary(
-    ctx: click.Context, date: date, ollama_model: str, ollama: bool
+    ctx: click.Context,
+    date: date,
+    ollama_model: str,
+    ollama: bool,
+    yesterday: bool,
 ) -> None:
     context: _Context = ctx.obj
 
     repository_events = defaultdict(list)
 
-    for event in list(context.github.issues_from(date)) + list(
-        context.github.commits_from(date)
+    filter_date = date
+    if yesterday:
+        filter_date = (datetime.now() - timedelta(days=1)).date()
+
+    for event in list(context.github.issues_from(filter_date)) + list(
+        context.github.commits_from(filter_date)
     ):
         repository_events[event.repository].append(event)
 
