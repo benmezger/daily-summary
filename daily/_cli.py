@@ -131,6 +131,7 @@ def account(ctx: click.Context) -> None:
     "--yesterday",
     is_flag=True,
     show_default=True,
+    help="Create daily summary for yesterday",
 )
 @click.option(
     "--escape",
