@@ -12,9 +12,8 @@ from typing import NamedTuple, TextIO
 
 import click
 
-from daily.models import RepositoryEvents
-
 from ._github import Github
+from ._models import RepositoryEvents
 from ._ollama import Ollama
 from ._summary import (
     maybe_write_commit_summary,

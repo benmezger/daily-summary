@@ -11,7 +11,7 @@ from datetime import date
 import github
 import pydash
 
-from daily.models import EventType, GithubEvent, User
+from ._models import EventType, GithubEvent, User
 
 
 class Github:

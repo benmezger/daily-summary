@@ -7,8 +7,7 @@ import datetime
 from collections import defaultdict
 from typing import TextIO
 
-from daily.models import EventType, GithubEvent, RepositoryEvents, Summary
-
+from ._models import EventType, GithubEvent, RepositoryEvents, Summary
 from ._ollama import Ollama
 
 
