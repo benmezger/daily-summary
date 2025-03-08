@@ -47,30 +47,6 @@ provide the token as a parameter to the command using:
 uv run task cli --token <GITHUB_TOKEN> ...
 ```
 
-### List today's PR
-
-``` sh
-uv run task cli list-issues
-```
-
-### List PRs from a specific date
-
-``` sh
-uv run task cli list-issues --date 2025-02-28
-```
-
-### List commits from a specific date
-
-``` sh
-uv run task cli list-commits --date 2025-02-28
-```
-
-### Showing account details
-
-``` sh
-uv run task cli account
-```
-
 ### Generate daily summaries based on PRs and commits
 This will default to today's date.
 
@@ -94,6 +70,30 @@ uv run task cli daily-summary --date 2025-02-28
 
 ``` sh
 uv run task cli --username github-bot daily-summary
+```
+
+### List today's PR
+
+``` sh
+uv run task cli list-issues
+```
+
+### List PRs from a specific date
+
+``` sh
+uv run task cli list-issues --date 2025-02-28
+```
+
+### List commits from a specific date
+
+``` sh
+uv run task cli list-commits --date 2025-02-28
+```
+
+### Showing account details
+
+``` sh
+uv run task cli account
 ```
 
 ### Other usages
