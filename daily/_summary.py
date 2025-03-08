@@ -44,8 +44,8 @@ def maybe_write_issue_summary(
             for evt in events:
                 summary = Summary.from_event(evt, ollama)
                 file.write(
-                    f"  - {summary.title} "
-                    f"[[{summary.event_type.value}]({summary.url})] "
+                    _maybe_escape_str(f"  - {summary.title} ", escape)
+                    + f"[[{summary.event_type.value}]({summary.url})] "
                     f"/ [{summary.state}]\n"
                 )
 
@@ -76,8 +76,8 @@ def maybe_write_commit_summary(
             for evt in events:
                 summary = Summary.from_event(evt, None)
                 file.write(
-                    f"  - {summary.title} "
-                    f"[[{summary.event_type.value}]({summary.url})]\n"
+                    _maybe_escape_str(f"  - {summary.title} ", escape)
+                    + f"[[{summary.event_type.value}]({summary.url})]\n"
                 )
 
 
