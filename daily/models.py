@@ -5,9 +5,9 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Self
+from typing import Self
 
-from pydantic import BaseModel, BeforeValidator, Field
+from pydantic import BaseModel, Field
 
 from ._ollama import Ollama
 

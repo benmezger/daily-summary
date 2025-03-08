@@ -139,6 +139,13 @@ def account(ctx: click.Context) -> None:
     show_default=True,
     help="Escape backticks. Needed for posting summary as a Github issue",
 )
+@click.option(
+    "--ollama-url",
+    default="http://localhost:11434",
+    type=str,
+    show_default=True,
+    help="Use custom Ollama URL.",
+)
 @click.pass_context
 def daily_summary(
     ctx: click.Context,
@@ -147,6 +154,7 @@ def daily_summary(
     ollama: bool,
     yesterday: bool,
     escape: bool,
+    ollama_url: str,
 ) -> None:
     context: _Context = ctx.obj
 
@@ -168,7 +176,7 @@ def daily_summary(
         for repo, evts in repository_events.items()
     ]
 
-    ollama_handler = Ollama(ollama_model) if ollama else None
+    ollama_handler = Ollama(host=ollama_url, model=ollama_model) if ollama else None
 
     maybe_write_header(events, context.file, filter_date)
     maybe_write_issue_summary(events, ollama_handler, context.file, escape)
