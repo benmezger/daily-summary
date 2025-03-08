@@ -72,9 +72,16 @@ uv run task cli account
 ```
 
 ### Generate daily summaries based on PRs and commits
+This will default to today's date.
 
 ``` sh
 uv run task cli daily-summary
+```
+
+### Generate daily summaries based on PRs and commits from yesterday
+
+``` sh
+uv run task cli daily-summary --yesterday
 ```
 
 ### Generate daily summaries based on PRs and commits for a specific date
