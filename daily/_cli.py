@@ -132,6 +132,12 @@ def account(ctx: click.Context) -> None:
     is_flag=True,
     show_default=True,
 )
+@click.option(
+    "--escape",
+    is_flag=True,
+    show_default=True,
+    help="Escape backticks. Needed for posting summary as a Github issue",
+)
 @click.pass_context
 def daily_summary(
     ctx: click.Context,
@@ -139,6 +145,7 @@ def daily_summary(
     ollama_model: str,
     ollama: bool,
     yesterday: bool,
+    escape: bool,
 ) -> None:
     context: _Context = ctx.obj
 
@@ -163,8 +170,8 @@ def daily_summary(
     ollama_handler = Ollama(ollama_model) if ollama else None
 
     maybe_write_header(events, context.file, filter_date)
-    maybe_write_issue_summary(events, ollama_handler, context.file)
-    maybe_write_commit_summary(events, context.file)
+    maybe_write_issue_summary(events, ollama_handler, context.file, escape)
+    maybe_write_commit_summary(events, context.file, escape)
     maybe_write_misc(events, context.file)
 
     context.file.close()

@@ -22,7 +22,10 @@ def maybe_write_header(
 
 
 def maybe_write_issue_summary(
-    repository_events: list[RepositoryEvents], ollama: Ollama | None, file: TextIO
+    repository_events: list[RepositoryEvents],
+    ollama: Ollama | None,
+    file: TextIO,
+    escape: bool = False,
 ) -> None:
     issue_events = _order_by_org_event_type(
         repository_events, (EventType.ISSUE, EventType.PULL_REQUEST)
@@ -33,10 +36,10 @@ def maybe_write_issue_summary(
     file.write("\n_PR/Issues summary_\n")
 
     for organization, repo_events in issue_events.items():
-        file.write(f"\n\\`{organization}\\`\n")
+        file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
 
         for repository, events in repo_events.items():
-            file.write(f"\n- \\`{repository}\\`\n")
+            file.write(_maybe_escape_str(f"\n- `{repository}`\n", escape))
 
             for evt in events:
                 summary = Summary.from_event(evt, ollama)
@@ -56,7 +59,7 @@ def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
 
 
 def maybe_write_commit_summary(
-    repository_events: list[RepositoryEvents], file: TextIO
+    repository_events: list[RepositoryEvents], file: TextIO, escape: bool = False
 ) -> None:
     commit_events = _order_by_org_event_type(repository_events, (EventType.COMMIT,))
     if not commit_events:
@@ -65,10 +68,10 @@ def maybe_write_commit_summary(
     file.write("\n_Commit summary_\n")
 
     for organization, repo_events in commit_events.items():
-        file.write(f"\n\\`{organization}\\`\n")
+        file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
 
         for repository, events in repo_events.items():
-            file.write(f"\n- \\`{repository}\\`\n")
+            file.write(_maybe_escape_str(f"\n- `{repository}`\n", escape))
 
             for evt in events:
                 summary = Summary.from_event(evt, None)
@@ -95,3 +98,9 @@ def _order_by_org_event_type(
             events[evt.organization][evt.repository].extend(filtered_events)
 
     return events
+
+
+def _maybe_escape_str(s: str, escape: bool) -> str:
+    if not escape:
+        return s
+    return s.replace("`", "\\`")

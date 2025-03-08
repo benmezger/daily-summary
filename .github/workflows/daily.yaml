@@ -41,7 +41,7 @@ jobs:
       - name: Generate daily summary
         id: summary
         run: |
-          uv run task cli --file daily.md daily-summary --yesterday --no-ollama
+          uv run task cli --file daily.md daily-summary --yesterday --escape --no-ollama
 
           while IFS= read -r line || [[ -n "$line" ]]; do
             if [[ -n "$line" ]]; then
