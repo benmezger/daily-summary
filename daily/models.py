@@ -50,10 +50,7 @@ class GithubEvent(BaseModel):
 
 
 class Summary(BaseModel):
-    title: Annotated[
-        str,
-        BeforeValidator(lambda value: value.replace('"', '\\"').replace("`", "\\`")),
-    ]
+    title: str
     url: str
     event_type: EventType
     organization: str

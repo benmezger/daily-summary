@@ -103,4 +103,4 @@ def _order_by_org_event_type(
 def _maybe_escape_str(s: str, escape: bool) -> str:
     if not escape:
         return s
-    return s.replace("`", "\\`")
+    return s.replace('"', '\\"').replace("`", "\\`")
