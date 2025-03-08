@@ -180,7 +180,7 @@ def daily_summary(
 
     maybe_write_header(events, context.file, filter_date)
     maybe_write_issue_summary(events, ollama_handler, context.file, escape)
-    maybe_write_commit_summary(events, context.file, escape)
+    maybe_write_commit_summary(events, ollama_handler, context.file, escape)
     maybe_write_misc(events, context.file)
 
     context.file.close()

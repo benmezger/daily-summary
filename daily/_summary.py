@@ -63,7 +63,10 @@ def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
 
 
 def maybe_write_commit_summary(
-    repository_events: list[RepositoryEvents], file: TextIO, escape: bool = False
+    repository_events: list[RepositoryEvents],
+    ollama: Ollama | None,
+    file: TextIO,
+    escape: bool = False,
 ) -> None:
     commit_events = _order_by_org_event_type(repository_events, (EventType.COMMIT,))
     if not commit_events:
@@ -78,7 +81,7 @@ def maybe_write_commit_summary(
             file.write(_maybe_escape_str(f"\n- `{repository}`\n", escape))
 
             for evt in events:
-                summary = Summary.from_event(evt, None)
+                summary = Summary.from_event(evt, ollama)
                 file.write(
                     _maybe_escape_str(f"  - {summary.title} ", escape)
                     + f"[[{summary.event_type.value}]({summary.url})]\n"

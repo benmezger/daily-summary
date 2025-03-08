@@ -60,7 +60,7 @@ class Summary(BaseModel):
     @classmethod
     def from_event(cls: type[Self], event: GithubEvent, ollama: Ollama | None) -> Self:
         title = event.title
-        if event.event_type in (EventType.ISSUE, EventType.PULL_REQUEST) and ollama:
+        if ollama:
             title = event.summarize(ollama)
 
         return cls(
