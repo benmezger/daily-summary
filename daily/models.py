@@ -51,6 +51,7 @@ class GithubEvent(BaseModel):
 
 class Summary(BaseModel):
     title: str
+    description: str | None
     url: str
     event_type: EventType
     organization: str
@@ -68,6 +69,7 @@ class Summary(BaseModel):
             event_type=event.event_type,
             organization=event.organization,
             state=event.state,
+            description=event.description,
         )
 
 

@@ -39,7 +39,7 @@ def maybe_write_issue_summary(
         file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
 
         for repository, events in repo_events.items():
-            file.write(_maybe_escape_str(f"\n- `{repository}`\n", escape))
+            file.write(_maybe_escape_str(f"- `{repository}`\n", escape))
 
             for evt in events:
                 summary = Summary.from_event(evt, ollama)
@@ -48,6 +48,10 @@ def maybe_write_issue_summary(
                     + f"[[{summary.event_type.value}]({summary.url})] "
                     f"/ [{summary.state}]\n"
                 )
+                if summary.description:
+                    file.write(
+                        _maybe_escape_str(f"    - _{summary.description}_\n", escape)
+                    )
 
 
 def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
@@ -79,6 +83,10 @@ def maybe_write_commit_summary(
                     _maybe_escape_str(f"  - {summary.title} ", escape)
                     + f"[[{summary.event_type.value}]({summary.url})]\n"
                 )
+                if summary.description:
+                    file.write(
+                        _maybe_escape_str(f"    - _{summary.description}_\n", escape)
+                    )
 
 
 def _order_by_org_event_type(
