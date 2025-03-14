@@ -79,3 +79,16 @@ jobs:
           gh issue lock "$ISSUE_URL"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Maybe post issue without a summary
+        if: ${{ steps.summary.outputs.text == '' }}
+        run: |
+          ISSUE_URL=$(gh issue --repo "$SUMMARY_REPOSITORY" create \
+            --title "No summary available for $(date -d 'yesterday' '+%Y-%m-%d')" \
+            --body "No summary available." \
+            --assignee "$SUMMARY_ASSIGNEE" \
+            --label no-summary | grep -o 'https://github.com[^ ]*')
+
+          gh issue lock "$ISSUE_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
