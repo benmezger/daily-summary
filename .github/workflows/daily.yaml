@@ -41,19 +41,28 @@ jobs:
       - name: Generate daily summary
         id: summary
         run: |
-          uv run task cli --file daily.md daily-summary --yesterday --escape --no-ollama
+          FILENAME="daily.md"
+          uv run task cli --file $FILENAME daily-summary --yesterday --escape --no-ollama
 
-          while IFS= read -r line || [[ -n "$line" ]]; do
-            if [[ -n "$line" ]]; then
-              echo "::add-mask::$line"
-            fi
-          done < daily.md
+          if [ -f $FILENAME ]; then
+            while IFS= read -r line || [[ -n "$line" ]]; do
+              if [[ -n "$line" ]]; then
+                echo "::add-mask::$line"
+              fi
+            done < $FILENAME
 
-          {
-            echo "text<<EOF"
-            cat daily.md
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+            {
+              echo "text<<EOF"
+              cat $FILENAME
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "text<<EOF"
+              echo ""
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
 
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
