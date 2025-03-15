@@ -93,7 +93,7 @@ class GithubEvent(BaseModel):
             return data
 
         match data.get("id", "").lower()[:2]:
-            case "pr_":
+            case "pr":
                 event_type = EventType.PULL_REQUEST
             case "i_":
                 event_type = EventType.ISSUE
