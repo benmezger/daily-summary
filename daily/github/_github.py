@@ -10,8 +10,9 @@ from datetime import date
 import pydash
 from httpx import Client
 
+from daily.models import GithubEvent, User
+
 from . import _graphql_queries as queries
-from ._models import GithubEvent, User
 
 
 class Github:

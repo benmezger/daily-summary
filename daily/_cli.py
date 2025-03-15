@@ -12,9 +12,6 @@ from typing import NamedTuple, TextIO
 
 import click
 
-from ._github import Github
-from ._models import GithubEvent, RepositoryEvents
-from ._ollama import Ollama
 from ._summary import (
     maybe_write_commit_summary,
     maybe_write_header,
@@ -22,6 +19,9 @@ from ._summary import (
     maybe_write_misc,
     maybe_write_reviews_summary,
 )
+from .github import Github
+from .models import GithubEvent, RepositoryEvents
+from .ollama import Ollama
 
 
 class _Context(NamedTuple):

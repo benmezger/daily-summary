@@ -7,8 +7,8 @@ import datetime
 from collections import defaultdict
 from typing import TextIO
 
-from ._models import EventType, GithubEvent, RepositoryEvents, Summary
-from ._ollama import Ollama
+from .models import EventType, GithubEvent, RepositoryEvents, Summary
+from .ollama import Ollama
 
 
 def maybe_write_header(

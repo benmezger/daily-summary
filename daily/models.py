@@ -17,7 +17,7 @@ from pydantic import (
     model_validator,
 )
 
-from ._ollama import Ollama
+from .ollama import Ollama
 
 
 class User(BaseModel):
