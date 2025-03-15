@@ -35,7 +35,11 @@ def maybe_write_issue_summary(
     file.write("\n_PR/Issues summary_\n")
 
     for organization, repo_events in issue_events.items():
-        file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
+        file.write(
+            _maybe_escape_str(
+                f"\n[`{organization}`](https://github.com/{organization})\n", escape
+            )
+        )
 
         for repository, events in repo_events.items():
             repository_url = events[0].repository.repository_url
@@ -65,7 +69,11 @@ def maybe_write_reviews_summary(
     file.write("\n_PR/Issues reviews_\n")
 
     for organization, repo_events in issue_events.items():
-        file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
+        file.write(
+            _maybe_escape_str(
+                f"\n[`{organization}`](https://github.com/{organization})\n", escape
+            )
+        )
 
         for repository, events in repo_events.items():
             repository_url = events[0].repository.repository_url
@@ -103,7 +111,11 @@ def maybe_write_commit_summary(
     file.write("\n_Commit summary_\n")
 
     for organization, repo_events in commit_events.items():
-        file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
+        file.write(
+            _maybe_escape_str(
+                f"\n[`{organization}`](https://github.com/{organization})\n", escape
+            )
+        )
 
         for repository, events in repo_events.items():
             repository_url = events[0].repository.repository_url
