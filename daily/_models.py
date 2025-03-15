@@ -88,17 +88,14 @@ class GithubEvent(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def set_event_type(cls: type["GithubEvent"], data: dict) -> dict:
-        if data.get("reviews"):
-            data["event_type"] = EventType.REVIEW
-            return data
+        event_type = EventType.ISSUE
 
-        match data.get("id", "").lower()[:2]:
-            case "pr":
-                event_type = EventType.PULL_REQUEST
-            case "i_":
-                event_type = EventType.ISSUE
-            case _:
-                event_type = EventType.COMMIT
+        if data.get("reviews"):
+            event_type = EventType.REVIEW
+        elif data.get("sha"):
+            event_type = EventType.COMMIT
+        elif "pr" in data.get("id", "").lower()[:2]:
+            event_type = EventType.PULL_REQUEST
 
         data["event_type"] = event_type
         return data
