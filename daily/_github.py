@@ -4,80 +4,72 @@
 # Created at <2025-02-28 Fri 23:17>
 
 
-import re
 from collections.abc import Iterable
 from datetime import date
 
-import github
 import pydash
+from httpx import Client
 
-from ._models import EventType, GithubEvent, User
+from . import _graphql_queries as queries
+from ._models import GithubEvent, User
 
 
 class Github:
     def __init__(self, access_token: str, username: str) -> None:
-        auth = github.Auth.Token(access_token)
+        self._client = Client(
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            }
+        )
 
         self.username = username
-        self._github = github.Github(auth=auth)
-        self._user = self._github.get_user()
+        self._user: User | None = None
 
     def get_user(self) -> User:
-        assert self._user.name
-        return User(username=self._user.login, name=self._user.name)
+        if self._user:
+            return self._user
+
+        response = self._client.get("https://api.github.com/user")
+        response.raise_for_status()
+        return User.model_validate(response.json())
 
     def issues_from(
         self,
         created_at: date,
     ) -> Iterable[GithubEvent]:
-        query = f"author:{self.username} created:{created_at:%Y-%m-%d}"
-
-        for issue in self._github.search_issues(query):
-            # we use the following regex to avoid using issue.pull_request
-            # since it makes a request to it
-            organization, repository_name = re.search(
-                r"github\.com/([^/]+)/([^/]+)", issue.html_url
-            ).groups()
-
-            merged = bool(pydash.get(issue, "pull_request.merged_at", False))
-            yield GithubEvent(
-                title=issue.title,
-                description=issue.body,
-                organization=organization,
-                merged=merged,
-                url=issue.html_url,
-                created_at=issue.created_at,
-                updated_at=issue.updated_at,
-                repository=repository_name,
-                event_type=EventType.PULL_REQUEST
-                if "pr_" in issue.node_id.lower()
-                else EventType.ISSUE,
-                state="merged" if merged else issue.state,
-            )
+        yield from self._make_graphql_request(
+            "https://api.github.com/graphql",
+            queries.issues.format(
+                username=self.username,
+                created_at=f"{created_at:%Y-%m-%d}",
+            ),
+            path="data.search.edges",
+        )
 
     def commits_from(
         self,
         created_at: date,
     ) -> Iterable[GithubEvent]:
-        query = f"author:{self.username} committer-date:{created_at:%Y-%m-%d}"
+        query = (
+            f"author:{self.username}+committer-date:{created_at:%Y-%m-%d}"
+            "+sort:committer-date"
+        )
+        response = self._client.get(f"https://api.github.com/search/commits?q={query}")
+        response.raise_for_status()
 
-        for commit in self._github.search_commits(query, sort="committer-date"):
-            title: str
-            description: str | None = None
+        for item in pydash.get(response.json(), "items", []):
+            yield GithubEvent.model_validate(item)
 
-            if len(parts := commit.commit.message.splitlines()) > 1:
-                title = parts[0]
-                description = "".join(parts[1:])
-            else:
-                title = parts[0]
+    def _make_graphql_request(
+        self, url: str, query: str, path: str
+    ) -> list[GithubEvent]:
+        response = self._client.post(url, json={"query": query})
+        response.raise_for_status()
 
-            yield GithubEvent(
-                title=title,
-                description=description,
-                sha=commit.sha,
-                url=commit.html_url,
-                repository=commit.repository.name,
-                organization=commit.repository.full_name.split("/")[0],
-                created_at=commit.commit.author.date,
-                event_type=EventType.COMMIT,
-            )
+        results = list[GithubEvent]()
+        for edge in pydash.get(response.json(), path, []):
+            if node := pydash.get(edge, "node", None):
+                results.append(GithubEvent.model_validate(node))
+
+        return results

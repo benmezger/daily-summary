@@ -3,17 +3,25 @@
 # Author: Ben Mezger <me@benmezger.nl>
 # Created at <2025-02-28 Fri 23:18>
 
+import re
 from datetime import datetime
 from enum import Enum
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import BaseModel, Field
+from pydantic import (
+    AliasChoices,
+    AliasPath,
+    BaseModel,
+    BeforeValidator,
+    Field,
+    model_validator,
+)
 
 from ._ollama import Ollama
 
 
 class User(BaseModel):
-    username: str
+    username: str = Field(alias="login")
     name: str
 
     def __str__(self) -> str:
@@ -26,27 +34,70 @@ class EventType(str, Enum):
     COMMIT = "Commit"
 
 
+class _Repository(BaseModel):
+    name: str
+    owner: str
+
+    @staticmethod
+    def split_name_with_owner(value: dict) -> dict:
+        if not (name_with_owner := value.pop("nameWithOwner", None)):
+            name_with_owner = value.pop("full_name")
+
+        organization, repository_name = re.search(
+            r"([^/]+)/([^/]+)", name_with_owner
+        ).groups()
+
+        return {"name": repository_name, "owner": organization}
+
+    def __str__(self) -> str:
+        return f"{self.owner}/{self.name}"
+
+
 class GithubEvent(BaseModel):
-    title: str
-    description: str | None
-    organization: str
-    merged: bool | None = None
+    id: str = Field(validation_alias=AliasChoices("id", "node_id"))
+    title: str = Field(
+        validation_alias=AliasChoices("title", AliasPath("commit", "message"))
+    )
+    description: str | None = Field(None, alias="body")
+    merged: Annotated[bool | None, BeforeValidator(lambda value: bool(value))] = Field(
+        None, alias="mergedAt"
+    )
     url: str
-    created_at: datetime
-    updated_at: datetime | None = None
-    repository: str
+    created_at: datetime = Field(
+        validation_alias=AliasChoices(
+            "createdAt", AliasPath("commit", "committer", "date")
+        )
+    )
+    updated_at: datetime | None = Field(None, alias="updatedAt")
+    repository: Annotated[
+        _Repository, BeforeValidator(_Repository.split_name_with_owner)
+    ] = Field(validation_alias=AliasChoices("repository", "full_name"))
     sha: str | None = None
     event_type: EventType
     state: str | None = None
 
-    def __str__(self) -> str:
-        return f"{self.title} @{self.repository} - {self.created_at}"
+    @model_validator(mode="before")
+    @classmethod
+    def set_event_type(cls: type["GithubEvent"], data: dict) -> dict:
+        match data.get("id", "").lower()[:2]:
+            case "pr_":
+                event_type = EventType.PULL_REQUEST
+            case "i_":
+                event_type = EventType.ISSUE
+            case _:
+                event_type = EventType.COMMIT
+
+        data["event_type"] = event_type
+        return data
 
     def summarize(self, ollama: Ollama) -> str:
         return ollama.chat(
             f"Summarize this message using imperative mood in a single sentence: "
             f"{self.title}"
         )
+
+    def __str__(self) -> str:
+        return f"{self.title} @{self.repository} - {self.created_at}"
 
 
 class Summary(BaseModel):
@@ -63,11 +114,12 @@ class Summary(BaseModel):
         if ollama:
             title = event.summarize(ollama)
 
+        assert event.event_type
         return cls(
             title=title.strip(),
             url=event.url.strip(),
             event_type=event.event_type,
-            organization=event.organization,
+            organization=str(event.repository),
             state=event.state,
             description=event.description,
         )

@@ -9,7 +9,6 @@ dependencies = [
     "ollama>=0.4.7",
     "pydantic>=2.10.6",
     "pydash>=8.0.5",
-    "pygithub>=2.6.1",
 ]
 
 [dependency-groups]

@@ -13,7 +13,7 @@ from typing import NamedTuple, TextIO
 import click
 
 from ._github import Github
-from ._models import RepositoryEvents
+from ._models import GithubEvent, RepositoryEvents
 from ._ollama import Ollama
 from ._summary import (
     maybe_write_commit_summary,
@@ -157,7 +157,7 @@ def daily_summary(
 ) -> None:
     context: _Context = ctx.obj
 
-    repository_events = defaultdict(list)
+    repository_events = defaultdict(list[GithubEvent])
 
     filter_date = date
     if yesterday:
@@ -166,11 +166,11 @@ def daily_summary(
     for event in list(context.github.issues_from(filter_date)) + list(
         context.github.commits_from(filter_date)
     ):
-        repository_events[event.repository].append(event)
+        repository_events[str(event.repository)].append(event)
 
     events = [
         RepositoryEvents(
-            repository=repo, events=evts, organization=evts[0].organization
+            repository=repo, events=evts, organization=str(evts[0].repository)
         )
         for repo, evts in repository_events.items()
     ]
