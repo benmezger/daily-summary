@@ -157,7 +157,7 @@ def daily_summary(
 ) -> None:
     context: _Context = ctx.obj
 
-    repository_events = defaultdict(list[GithubEvent])
+    repository_events: dict[str, list[GithubEvent]] = defaultdict(list[GithubEvent])
 
     filter_date = date
     if yesterday:
@@ -170,9 +170,11 @@ def daily_summary(
 
     events = [
         RepositoryEvents(
-            repository=repo, events=evts, organization=str(evts[0].repository)
+            repository=evts[0].repository.name,
+            organization=evts[0].repository.owner,
+            events=evts,
         )
-        for repo, evts in repository_events.items()
+        for evts in repository_events.values()
     ]
 
     ollama_handler = Ollama(host=ollama_url, model=ollama_model) if ollama else None
