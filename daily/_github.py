@@ -61,6 +61,16 @@ class Github:
         for item in pydash.get(response.json(), "items", []):
             yield GithubEvent.model_validate(item)
 
+    def reviews_from(self, updated_at: date) -> Iterable[GithubEvent]:
+        yield from self._make_graphql_request(
+            "https://api.github.com/graphql",
+            queries.reviews.format(
+                username=self.username,
+                updated_at=f"{updated_at:%Y-%m-%d}",
+            ),
+            path="data.search.edges",
+        )
+
     def _make_graphql_request(
         self, url: str, query: str, path: str
     ) -> list[GithubEvent]:

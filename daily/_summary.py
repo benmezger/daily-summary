@@ -49,6 +49,33 @@ def maybe_write_issue_summary(
                 )
 
 
+def maybe_write_reviews_summary(
+    repository_events: list[RepositoryEvents],
+    ollama: Ollama | None,
+    file: TextIO,
+    escape: bool = False,
+) -> None:
+    issue_events = _order_by_org_event_type(repository_events, (EventType.REVIEW,))
+    if not issue_events:
+        return
+
+    file.write("\n_PR/Issues reviews_\n")
+
+    for organization, repo_events in issue_events.items():
+        file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
+
+        for repository, events in repo_events.items():
+            file.write(_maybe_escape_str(f"- `{repository}`\n", escape))
+
+            for evt in events:
+                summary = Summary.from_event(evt, ollama)
+                file.write(
+                    _maybe_escape_str(f"  - {summary.title} ", escape)
+                    + f"[[{summary.event_type.value}]({summary.url})] "
+                    f"/ [{summary.state}]\n"
+                )
+
+
 def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
     if not events:
         return

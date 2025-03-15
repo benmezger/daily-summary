@@ -41,3 +41,38 @@ issues: Final[str] = """
   }}
 }}
 """
+
+reviews: Final[str] = """
+{{
+  search(
+    first: 100
+    query: "updated:{updated_at} type:pr reviewed-by:{username}"
+    type: ISSUE
+  ) {{
+    edges {{
+      node {{
+        ... on PullRequest {{
+          title
+          id
+          url
+          state
+          createdAt
+          repository {{
+            nameWithOwner
+          }}
+          reviews(last: 10) {{
+            nodes {{
+              author {{
+                login
+              }}
+              state
+              createdAt
+              url
+            }}
+          }}
+        }}
+      }}
+    }}
+  }}
+}}
+"""

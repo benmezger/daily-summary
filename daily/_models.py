@@ -32,6 +32,7 @@ class EventType(str, Enum):
     PULL_REQUEST = "PR"
     ISSUE = "Issue"
     COMMIT = "Commit"
+    REVIEW = "Review"
 
 
 class _Repository(BaseModel):
@@ -79,6 +80,10 @@ class GithubEvent(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def set_event_type(cls: type["GithubEvent"], data: dict) -> dict:
+        if data.get("reviews"):
+            data["event_type"] = EventType.REVIEW
+            return data
+
         match data.get("id", "").lower()[:2]:
             case "pr_":
                 event_type = EventType.PULL_REQUEST

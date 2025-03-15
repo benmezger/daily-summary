@@ -20,6 +20,7 @@ from ._summary import (
     maybe_write_header,
     maybe_write_issue_summary,
     maybe_write_misc,
+    maybe_write_reviews_summary,
 )
 
 
@@ -163,8 +164,10 @@ def daily_summary(
     if yesterday:
         filter_date = (datetime.now() - timedelta(days=1)).date()
 
-    for event in list(context.github.issues_from(filter_date)) + list(
-        context.github.commits_from(filter_date)
+    for event in (
+        list(context.github.issues_from(filter_date))
+        + list(context.github.commits_from(filter_date))
+        + list(context.github.reviews_from(filter_date))
     ):
         repository_events[str(event.repository)].append(event)
 
@@ -181,6 +184,7 @@ def daily_summary(
 
     maybe_write_header(events, context.file, filter_date)
     maybe_write_issue_summary(events, ollama_handler, context.file, escape)
+    maybe_write_reviews_summary(events, ollama_handler, context.file, escape)
     maybe_write_commit_summary(events, ollama_handler, context.file, escape)
     maybe_write_misc(events, context.file)
 
