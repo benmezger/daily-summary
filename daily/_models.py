@@ -50,6 +50,14 @@ class _Repository(BaseModel):
 
         return {"name": repository_name, "owner": organization}
 
+    @property
+    def repository_url(self) -> str:
+        return f"https://github.com/{self}"
+
+    @property
+    def organization_url(self) -> str:
+        return f"https://github.com/{self.owner}"
+
     def __str__(self) -> str:
         return f"{self.owner}/{self.name}"
 
@@ -108,7 +116,9 @@ class GithubEvent(BaseModel):
 class Summary(BaseModel):
     title: str
     description: str | None
-    url: str
+    repository_url: str
+    organization_url: str
+    event_url: str
     event_type: EventType
     organization: str
     state: str | None
@@ -122,10 +132,12 @@ class Summary(BaseModel):
         assert event.event_type
         return cls(
             title=title.strip(),
-            url=event.url.strip(),
+            repository_url=event.repository.repository_url,
+            organization_url=event.repository.organization_url,
+            event_url=event.url.strip(),
             event_type=event.event_type,
             organization=str(event.repository),
-            state=event.state,
+            state=event.state.title() if event.state else None,
             description=event.description,
         )
 

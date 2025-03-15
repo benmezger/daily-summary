@@ -38,13 +38,16 @@ def maybe_write_issue_summary(
         file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
 
         for repository, events in repo_events.items():
-            file.write(_maybe_escape_str(f"- `{repository}`\n", escape))
+            repository_url = events[0].repository.repository_url
+            file.write(
+                _maybe_escape_str(f"- [`{repository}`]({repository_url})\n", escape)
+            )
 
             for evt in events:
                 summary = Summary.from_event(evt, ollama)
                 file.write(
                     _maybe_escape_str(f"  - {summary.title} ", escape)
-                    + f"[[{summary.event_type.value}]({summary.url})] "
+                    + f"[[{summary.event_type.value}]({summary.event_url})] "
                     f"/ [{summary.state}]\n"
                 )
 
@@ -65,13 +68,16 @@ def maybe_write_reviews_summary(
         file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
 
         for repository, events in repo_events.items():
-            file.write(_maybe_escape_str(f"- `{repository}`\n", escape))
+            repository_url = events[0].repository.repository_url
+            file.write(
+                _maybe_escape_str(f"- [`{repository}`]({repository_url})\n", escape)
+            )
 
             for evt in events:
                 summary = Summary.from_event(evt, ollama)
                 file.write(
                     _maybe_escape_str(f"  - {summary.title} ", escape)
-                    + f"[[{summary.event_type.value}]({summary.url})] "
+                    + f"[[{summary.event_type.value}]({summary.event_url})] "
                     f"/ [{summary.state}]\n"
                 )
 
@@ -100,13 +106,16 @@ def maybe_write_commit_summary(
         file.write(_maybe_escape_str(f"\n`{organization}`\n", escape))
 
         for repository, events in repo_events.items():
-            file.write(_maybe_escape_str(f"\n- `{repository}`\n", escape))
+            repository_url = events[0].repository.repository_url
+            file.write(
+                _maybe_escape_str(f"\n- [`{repository}`]({repository_url})\n", escape)
+            )
 
             for evt in events:
                 summary = Summary.from_event(evt, ollama)
                 file.write(
                     _maybe_escape_str(f"  - {summary.title} ", escape)
-                    + f"[[{summary.event_type.value}]({summary.url})]\n"
+                    + f"[[{summary.event_type.value}]({summary.event_url})]\n"
                 )
 
 
