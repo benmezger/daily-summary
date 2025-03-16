@@ -144,7 +144,6 @@ class Summary(BaseModel):
         if ollama:
             title = event.summarize(ollama)
 
-        assert event.event_type
         return cls(
             title=title.strip(),
             repository_url=event.repository.repository_url,
