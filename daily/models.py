@@ -77,9 +77,11 @@ class GithubEvent(BaseModel):
     title: str = Field(
         validation_alias=AliasChoices("title", AliasPath("commit", "message"))
     )
-    description: str | None = Field(None, alias="body")
+    description: str | None = Field(
+        default=None, validation_alias=AliasChoices("body", "description")
+    )
     merged: Annotated[bool | None, BeforeValidator(lambda value: bool(value))] = Field(
-        None, alias="mergedAt"
+        default=None, alias="mergedAt"
     )
     url: str
     created_at: datetime = Field(
@@ -87,7 +89,7 @@ class GithubEvent(BaseModel):
             "created_at", "createdAt", AliasPath("commit", "committer", "date")
         )
     )
-    updated_at: datetime | None = Field(None, alias="updatedAt")
+    updated_at: datetime | None = Field(default=None, alias="updatedAt")
     repository: Annotated[
         Repository, BeforeValidator(Repository.split_name_with_owner)
     ] = Field(validation_alias=AliasChoices("repository", "full_name"))
