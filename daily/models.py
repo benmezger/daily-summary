@@ -17,8 +17,6 @@ from pydantic import (
     model_validator,
 )
 
-from .ollama import Ollama
-
 
 class User(BaseModel):
     username: str = Field(alias="login")
@@ -119,12 +117,6 @@ class GithubEvent(BaseModel):
         data["event_type"] = event_type
         return data
 
-    def summarize(self, ollama: Ollama) -> str:
-        return ollama.chat(
-            f"Summarize this message using imperative mood in a single sentence: "
-            f"{self.title}"
-        )
-
     def __str__(self) -> str:
         return f"{self.title} @{self.repository} - {self.created_at}"
 
@@ -139,13 +131,9 @@ class Summary(BaseModel):
     state: str | None
 
     @classmethod
-    def from_event(cls: type[Self], event: GithubEvent, ollama: Ollama | None) -> Self:
-        title = event.title
-        if ollama:
-            title = event.summarize(ollama)
-
+    def from_event(cls: type[Self], event: GithubEvent) -> Self:
         return cls(
-            title=title.strip(),
+            title=event.title.strip(),
             repository_url=event.repository.repository_url,
             event_url=event.url.strip(),
             event_type=event.event_type,

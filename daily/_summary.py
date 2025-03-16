@@ -59,6 +59,16 @@ def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
     file.write("\n- PR reviews and discussions\n")
 
 
+def _maybe_summarize(content: str, ollama: Ollama | None) -> str:
+    if ollama:
+        return ollama.chat(
+            f"Summarize this message using imperative mood in a single sentence: "
+            f"{content}"
+        )
+
+    return content
+
+
 def _maybe_write_summary(
     title: str,
     repository_events: defaultdict[str, defaultdict[str, list[GithubEvent]]],
@@ -85,9 +95,11 @@ def _maybe_write_summary(
             )
 
             for evt in events:
-                summary = Summary.from_event(evt, ollama)
+                summary = Summary.from_event(evt)
+                title = _maybe_summarize(summary.title, ollama)
+
                 file.write(
-                    _maybe_escape_str(f"  - {summary.title} ", escape)
+                    _maybe_escape_str(f"  - {title} ", escape)
                     + f"[[{summary.event_type.value}]({summary.event_url})] "
                     + (f"/ [{summary.state}]\n" if summary.state else "\n")
                 )
