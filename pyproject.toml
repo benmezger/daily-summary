@@ -14,7 +14,9 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pyright>=1.1.395",
+    "pytest>=8.3.5",
     "ruff>=0.9.9",
+    "snapshottest>=0.6.0",
     "taskipy>=1.14.1",
 ]
 
@@ -38,6 +40,7 @@ lint.select = [
 ]
 target-version = "py311"
 extend-exclude = [".venv"]
+exclude = ["tests/snapshots/*"]
 
 [tool.pyright]
 include = ["daily"]

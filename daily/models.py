@@ -6,7 +6,7 @@
 import re
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Self
+from typing import Annotated, Self, Union
 
 from pydantic import (
     AliasChoices,
@@ -35,12 +35,17 @@ class EventType(StrEnum):
     REVIEW = "Review"
 
 
-class _Repository(BaseModel):
+class Repository(BaseModel):
     name: str
     owner: str
 
     @staticmethod
-    def split_name_with_owner(value: dict) -> dict:
+    def split_name_with_owner(
+        value: Union[dict, "Repository"],
+    ) -> Union[dict, "Repository"]:
+        if isinstance(value, Repository):
+            return value
+
         if not (name_with_owner := value.pop("nameWithOwner", None)):
             name_with_owner = value.pop("full_name")
 
@@ -79,12 +84,12 @@ class GithubEvent(BaseModel):
     url: str
     created_at: datetime = Field(
         validation_alias=AliasChoices(
-            "createdAt", AliasPath("commit", "committer", "date")
+            "created_at", "createdAt", AliasPath("commit", "committer", "date")
         )
     )
     updated_at: datetime | None = Field(None, alias="updatedAt")
     repository: Annotated[
-        _Repository, BeforeValidator(_Repository.split_name_with_owner)
+        Repository, BeforeValidator(Repository.split_name_with_owner)
     ] = Field(validation_alias=AliasChoices("repository", "full_name"))
     sha: str | None = None
     event_type: EventType
@@ -97,6 +102,9 @@ class GithubEvent(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def set_event_type(cls: type["GithubEvent"], data: dict) -> dict:
+        if data.get("event_type"):
+            return data
+
         event_type = EventType.ISSUE
 
         if data.get("reviews"):
