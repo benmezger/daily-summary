@@ -57,6 +57,14 @@ def maybe_write_github_summaries(
     )
 
 
+def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
+    if not events:
+        return
+
+    file.write("\n_Misc_\n")
+    file.write("\n- PR reviews and discussions\n")
+
+
 def _maybe_write_summary(
     title: str,
     repository_events: defaultdict[str, defaultdict[str, list[GithubEvent]]],
@@ -89,14 +97,6 @@ def _maybe_write_summary(
                     + f"[[{summary.event_type.value}]({summary.event_url})] "
                     + (f"/ [{summary.state}]\n" if summary.state else "\n")
                 )
-
-
-def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
-    if not events:
-        return
-
-    file.write("\n_Misc_\n")
-    file.write("\n- PR reviews and discussions\n")
 
 
 def _order_by_org_event_type(
