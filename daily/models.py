@@ -5,7 +5,7 @@
 
 import re
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Self
 
 from pydantic import (
@@ -28,7 +28,7 @@ class User(BaseModel):
         return f"{self.name} - @{self.username}"
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     PULL_REQUEST = "PR"
     ISSUE = "Issue"
     COMMIT = "Commit"
