@@ -20,55 +20,56 @@ def maybe_write_header(
     file.write(f"Summary of *{date:%Y-%m-%d}*\n")
 
 
-def maybe_write_issue_summary(
+def maybe_write_github_summaries(
     repository_events: list[RepositoryEvents],
     ollama: Ollama | None,
     file: TextIO,
     escape: bool = False,
 ) -> None:
-    issue_events = _order_by_org_event_type(
-        repository_events, (EventType.ISSUE, EventType.PULL_REQUEST)
+    _maybe_write_summary(
+        title="\n_PR/Issues summary_\n",
+        repository_events=_order_by_org_event_type(
+            repository_events, (EventType.ISSUE, EventType.PULL_REQUEST)
+        ),
+        ollama=ollama,
+        escape=escape,
+        file=file,
     )
-    if not issue_events:
-        return
 
-    file.write("\n_PR/Issues summary_\n")
+    _maybe_write_summary(
+        title="\n_Issue reviews_\n",
+        repository_events=_order_by_org_event_type(
+            repository_events, (EventType.REVIEW,)
+        ),
+        ollama=ollama,
+        escape=escape,
+        file=file,
+    )
 
-    for organization, repo_events in issue_events.items():
-        file.write(
-            _maybe_escape_str(
-                f"\n[`{organization}`](https://github.com/{organization})\n", escape
-            )
-        )
-
-        for repository, events in repo_events.items():
-            repository_url = events[0].repository.repository_url
-            file.write(
-                _maybe_escape_str(f"- [`{repository}`]({repository_url})\n", escape)
-            )
-
-            for evt in events:
-                summary = Summary.from_event(evt, ollama)
-                file.write(
-                    _maybe_escape_str(f"  - {summary.title} ", escape)
-                    + f"[[{summary.event_type.value}]({summary.event_url})] "
-                    f"/ [{summary.state}]\n"
-                )
+    _maybe_write_summary(
+        title="\n_Commit summary_\n",
+        repository_events=_order_by_org_event_type(
+            repository_events, (EventType.COMMIT,)
+        ),
+        ollama=ollama,
+        escape=escape,
+        file=file,
+    )
 
 
-def maybe_write_reviews_summary(
-    repository_events: list[RepositoryEvents],
+def _maybe_write_summary(
+    title: str,
+    repository_events: defaultdict[str, defaultdict[str, list[GithubEvent]]],
     ollama: Ollama | None,
     file: TextIO,
     escape: bool = False,
 ) -> None:
-    issue_events = _order_by_org_event_type(repository_events, (EventType.REVIEW,))
-    if not issue_events:
+    if not repository_events:
         return
 
-    file.write("\n_PR/Issues reviews_\n")
+    file.write(title)
 
-    for organization, repo_events in issue_events.items():
+    for organization, repo_events in repository_events.items():
         file.write(
             _maybe_escape_str(
                 f"\n[`{organization}`](https://github.com/{organization})\n", escape
@@ -86,7 +87,7 @@ def maybe_write_reviews_summary(
                 file.write(
                     _maybe_escape_str(f"  - {summary.title} ", escape)
                     + f"[[{summary.event_type.value}]({summary.event_url})] "
-                    f"/ [{summary.state}]\n"
+                    + (f"/ [{summary.state}]\n" if summary.state else "\n")
                 )
 
 
@@ -96,39 +97,6 @@ def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
 
     file.write("\n_Misc_\n")
     file.write("\n- PR reviews and discussions\n")
-
-
-def maybe_write_commit_summary(
-    repository_events: list[RepositoryEvents],
-    ollama: Ollama | None,
-    file: TextIO,
-    escape: bool = False,
-) -> None:
-    commit_events = _order_by_org_event_type(repository_events, (EventType.COMMIT,))
-    if not commit_events:
-        return
-
-    file.write("\n_Commit summary_\n")
-
-    for organization, repo_events in commit_events.items():
-        file.write(
-            _maybe_escape_str(
-                f"\n[`{organization}`](https://github.com/{organization})\n", escape
-            )
-        )
-
-        for repository, events in repo_events.items():
-            repository_url = events[0].repository.repository_url
-            file.write(
-                _maybe_escape_str(f"\n- [`{repository}`]({repository_url})\n", escape)
-            )
-
-            for evt in events:
-                summary = Summary.from_event(evt, ollama)
-                file.write(
-                    _maybe_escape_str(f"  - {summary.title} ", escape)
-                    + f"[[{summary.event_type.value}]({summary.event_url})]\n"
-                )
 
 
 def _order_by_org_event_type(

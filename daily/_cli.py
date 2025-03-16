@@ -12,13 +12,7 @@ from typing import NamedTuple, TextIO
 
 import click
 
-from ._summary import (
-    maybe_write_commit_summary,
-    maybe_write_header,
-    maybe_write_issue_summary,
-    maybe_write_misc,
-    maybe_write_reviews_summary,
-)
+from ._summary import maybe_write_github_summaries, maybe_write_header, maybe_write_misc
 from .github import Github
 from .models import GithubEvent, RepositoryEvents
 from .ollama import Ollama
@@ -183,9 +177,7 @@ def daily_summary(
     ollama_handler = Ollama(host=ollama_url, model=ollama_model) if ollama else None
 
     maybe_write_header(events, context.file, filter_date)
-    maybe_write_issue_summary(events, ollama_handler, context.file, escape)
-    maybe_write_reviews_summary(events, ollama_handler, context.file, escape)
-    maybe_write_commit_summary(events, ollama_handler, context.file, escape)
+    maybe_write_github_summaries(events, ollama_handler, context.file, escape)
     maybe_write_misc(events, context.file)
 
     context.file.close()
