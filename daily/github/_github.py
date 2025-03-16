@@ -63,14 +63,22 @@ class Github:
             yield GithubEvent.model_validate(item)
 
     def reviews_from(self, updated_at: date) -> Iterable[GithubEvent]:
-        yield from self._make_graphql_request(
+        for event in self._make_graphql_request(
             "https://api.github.com/graphql",
             queries.reviews.format(
                 username=self.username,
                 updated_at=f"{updated_at:%Y-%m-%d}",
             ),
             path="data.search.edges",
-        )
+        ):
+            for review in event.reviews:
+                if review.username != self.username:
+                    continue
+                if review.updated_at.date() != updated_at:
+                    continue
+
+                yield event
+                break
 
     def _make_graphql_request(
         self, url: str, query: str, path: str

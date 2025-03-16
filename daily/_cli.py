@@ -149,7 +149,7 @@ def account(ctx: click.Context) -> None:
 @click.pass_context
 def daily_summary(
     ctx: click.Context,
-    date: date,
+    date: datetime,
     ollama_model: str,
     ollama: bool,
     yesterday: bool,
@@ -160,7 +160,7 @@ def daily_summary(
 
     repository_events: dict[str, list[GithubEvent]] = defaultdict(list[GithubEvent])
 
-    filter_date = date
+    filter_date = date.date()
     if yesterday:
         filter_date = (datetime.now() - timedelta(days=1)).date()
 

@@ -67,6 +67,7 @@ reviews: Final[str] = """
               }}
               state
               createdAt
+              updatedAt
               url
             }}
           }}

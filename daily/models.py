@@ -58,6 +58,15 @@ class _Repository(BaseModel):
         return f"{self.owner}/{self.name}"
 
 
+class GithubReview(BaseModel):
+    username: str = Field(
+        validation_alias=AliasChoices("login", AliasPath("author", "login"))
+    )
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+    state: str
+
+
 class GithubEvent(BaseModel):
     id: str = Field(validation_alias=AliasChoices("id", "node_id"))
     title: str = Field(
@@ -80,6 +89,10 @@ class GithubEvent(BaseModel):
     sha: str | None = None
     event_type: EventType
     state: str | None = None
+    reviews: list[GithubReview] = Field(
+        default_factory=list[GithubReview],
+        validation_alias=AliasChoices("nodes", AliasPath("reviews", "nodes")),
+    )
 
     @model_validator(mode="before")
     @classmethod
