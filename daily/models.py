@@ -83,7 +83,7 @@ class GithubEvent(BaseModel):
     merged: Annotated[bool | None, BeforeValidator(lambda value: bool(value))] = Field(
         default=None, alias="mergedAt"
     )
-    url: str
+    url: str = Field(validation_alias=AliasChoices("html_url", "url"))
     created_at: datetime = Field(
         validation_alias=AliasChoices(
             "created_at", "createdAt", AliasPath("commit", "committer", "date")
