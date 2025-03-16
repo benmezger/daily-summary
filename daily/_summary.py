@@ -5,6 +5,7 @@
 
 import datetime
 from collections import defaultdict
+from functools import partial
 from typing import TextIO
 
 from .models import EventType, GithubEvent, RepositoryEvents, Summary
@@ -26,34 +27,27 @@ def maybe_write_github_summaries(
     file: TextIO,
     escape: bool = False,
 ) -> None:
-    _maybe_write_summary(
+    summary = partial(_maybe_write_summary, file=file, escape=escape, ollama=ollama)
+
+    summary(
         title="\n_PR/Issues summary_\n",
         repository_events=_order_by_org_event_type(
             repository_events, (EventType.ISSUE, EventType.PULL_REQUEST)
         ),
-        ollama=ollama,
-        escape=escape,
-        file=file,
     )
 
-    _maybe_write_summary(
+    summary(
         title="\n_Issue reviews_\n",
         repository_events=_order_by_org_event_type(
             repository_events, (EventType.REVIEW,)
         ),
-        ollama=ollama,
-        escape=escape,
-        file=file,
     )
 
-    _maybe_write_summary(
+    summary(
         title="\n_Commit summary_\n",
         repository_events=_order_by_org_event_type(
             repository_events, (EventType.COMMIT,)
         ),
-        ollama=ollama,
-        escape=escape,
-        file=file,
     )
 
 
