@@ -19,7 +19,7 @@ def github_events() -> list[GithubEvent]:
             events.append(
                 GithubEvent(
                     id=f"id-{i}",
-                    title=f"Title {event_type} {i}",
+                    title=f"Title {event_type} {i}\nTitle body",
                     description="Event description",
                     url=f"http://github.com/repo/{event_type}",
                     event_type=event_type,

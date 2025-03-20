@@ -133,7 +133,7 @@ class Summary(BaseModel):
     @classmethod
     def from_event(cls: type[Self], event: GithubEvent) -> Self:
         return cls(
-            title=event.title.strip(),
+            title=event.title.strip().splitlines()[0],
             repository_url=event.repository.repository_url,
             event_url=event.url.strip(),
             event_type=event.event_type,
