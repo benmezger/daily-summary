@@ -1,0 +1,38 @@
+name: Check code style
+on:
+  push
+
+jobs:
+  check-code:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    concurrency:
+      group: code
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.4"
+          enable-cache: true
+
+      - name: Install project dependencies
+        if: steps.setup-uv.outputs.cache-hit != 'true'
+        run: uv sync
+
+      - name: Run lint
+        run: uv run task lint
+
+      - name: Check types
+        run: uv run task check_types
+
+      - name: Run tests
+        run: uv run task test
