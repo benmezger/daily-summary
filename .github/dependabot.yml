@@ -1,0 +1,18 @@
+version: 2
+enable-beta-ecosystems: true
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    labels:
+      - "ci/cd"
+      - "dependencies"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    labels:
+      - "dependencies"
+      - "python"
+    schedule:
+      interval: "daily"
