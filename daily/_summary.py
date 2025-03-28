@@ -30,14 +30,14 @@ def maybe_write_github_summaries(
     summary = partial(_maybe_write_summary, file=file, escape=escape, ollama=ollama)
 
     summary(
-        title="\n_PR/Issues summary_\n",
+        title="\n_PR/Issue summary_\n",
         repository_events=_order_by_org_event_type(
             repository_events, (EventType.ISSUE, EventType.PULL_REQUEST)
         ),
     )
 
     summary(
-        title="\n_Issue reviews_\n",
+        title="\n_PR/Issue review_\n",
         repository_events=_order_by_org_event_type(
             repository_events, (EventType.REVIEW,)
         ),

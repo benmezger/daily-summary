@@ -8,7 +8,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots['test_maybe_write_github_summaries[False] 1'] = '''
-_PR/Issues summary_
+_PR/Issue summary_
 
 [`repository-owner-0`](https://github.com/repository-owner-0)
 - [`repository-name-0`](https://github.com/repository-owner-0/repository-name-0)
@@ -20,7 +20,7 @@ _PR/Issues summary_
   - Title PR 1 [[PR](http://github.com/repo/PR)] 
   - Title Issue 1 [[Issue](http://github.com/repo/Issue)] 
 
-_Issue reviews_
+_PR/Issue review_
 
 [`repository-owner-0`](https://github.com/repository-owner-0)
 - [`repository-name-0`](https://github.com/repository-owner-0/repository-name-0)
@@ -42,7 +42,7 @@ _Commit summary_
 '''
 
 snapshots['test_maybe_write_github_summaries[True] 1'] = '''
-_PR/Issues summary_
+_PR/Issue summary_
 
 [\\`repository-owner-0\\`](https://github.com/repository-owner-0)
 - [\\`repository-name-0\\`](https://github.com/repository-owner-0/repository-name-0)
@@ -54,7 +54,7 @@ _PR/Issues summary_
   - Title PR 1 [[PR](http://github.com/repo/PR)] 
   - Title Issue 1 [[Issue](http://github.com/repo/Issue)] 
 
-_Issue reviews_
+_PR/Issue review_
 
 [\\`repository-owner-0\\`](https://github.com/repository-owner-0)
 - [\\`repository-name-0\\`](https://github.com/repository-owner-0/repository-name-0)
