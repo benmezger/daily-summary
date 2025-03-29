@@ -79,4 +79,6 @@ snapshots['test_maybe_write_misc 1'] = '''
 _Misc_
 
 - PR reviews and discussions
+
+Created by https://github.com/benmezger/daily-summary
 '''

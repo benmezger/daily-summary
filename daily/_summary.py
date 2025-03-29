@@ -57,6 +57,8 @@ def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
 
     file.write("\n_Misc_\n")
     file.write("\n- PR reviews and discussions\n")
+    file.write("\n")
+    file.write("Created by https://github.com/benmezger/daily-summary\n")
 
 
 def _maybe_summarize(content: str, ollama: Ollama | None) -> str:
