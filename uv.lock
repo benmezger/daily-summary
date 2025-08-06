@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 
 [[package]]
@@ -180,15 +180,15 @@ wheels = [
 
 [[package]]
 name = "ollama"
-version = "0.5.1"
+version = "0.5.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8d/96/c7fe0d2d1b3053be614822a7b722c7465161b3672ce90df71515137580a0/ollama-0.5.1.tar.gz", hash = "sha256:5a799e4dc4e7af638b11e3ae588ab17623ee019e496caaf4323efbaa8feeff93", size = 41112, upload-time = "2025-05-30T21:32:48.679Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/31/381d5429fffb088b55c0ace6d4c441dc355cf801620d7288813f77e9193a/ollama-0.5.2.tar.gz", hash = "sha256:7a575a90416a816231f216dbd10c3480b107218a90388c061fdf20d7ab7fe990", size = 43092, upload-time = "2025-08-05T23:02:08.404Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d6/76/3f96c8cdbf3955d7a73ee94ce3e0db0755d6de1e0098a70275940d1aff2f/ollama-0.5.1-py3-none-any.whl", hash = "sha256:4c8839f35bc173c7057b1eb2cbe7f498c1a7e134eafc9192824c8aecb3617506", size = 13369, upload-time = "2025-05-30T21:32:47.429Z" },
+    { url = "https://files.pythonhosted.org/packages/76/10/d8a4e0468394e1093d32421bacd1e87452aa96b60a55f5f70766af5406f8/ollama-0.5.2-py3-none-any.whl", hash = "sha256:48ee9aed1c8f4cf2e4237b6d4cc36c328f1abc40da4aa6edf52698f757bc4164", size = 13423, upload-time = "2025-08-05T23:02:07.191Z" },
 ]
 
 [[package]]
@@ -409,7 +409,7 @@ dependencies = [
     { name = "colorama" },
     { name = "mslex", marker = "sys_platform == 'win32'" },
     { name = "psutil" },
-    { name = "tomli", marker = "python_full_version < '4.0'" },
+    { name = "tomli", marker = "python_full_version < '4'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c7/44/572261df3db9c6c3332f8618fafeb07a578fd18b06673c73f000f3586749/taskipy-1.14.1.tar.gz", hash = "sha256:410fbcf89692dfd4b9f39c2b49e1750b0a7b81affd0e2d7ea8c35f9d6a4774ed", size = 14475, upload-time = "2024-11-26T16:37:46.155Z" }
 wheels = [
