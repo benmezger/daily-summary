@@ -72,13 +72,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Maybe set current year
-        if: ${{ steps.summary.outputs.text }}
+      - name: Set current year
         run:
           echo "CURRENT_YEAR=$(date '+%Y')" >> $GITHUB_ENV
 
       - name: Maybe create milestone
-        if: ${{ steps.summary.outputs.text }}
         run: |
           milestones=$(gh milestone list --repo $SUMMARY_REPOSITORY)
 
