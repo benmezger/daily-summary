@@ -4,6 +4,7 @@
 # Created at <2025-03-01 Sat 17:44>
 
 import datetime
+import re
 from collections import defaultdict
 from functools import partial
 from typing import TextIO
@@ -129,4 +130,13 @@ def _order_by_org_event_type(
 def _maybe_escape_str(s: str, escape: bool) -> str:
     if not escape:
         return s
-    return s.replace('"', '\\"').replace("`", "\\`")
+
+    s = s.replace('"', '\\"').replace("`", "\\`")
+    # make sure we skip any #1, #23, etc. to avoid linking with issue.
+    return re.sub(r"#\d+", _re_maybe_escape_hash, s)
+
+
+def _re_maybe_escape_hash(match_: re.Match[str]) -> str:
+    if matched := match_.group(0):
+        return matched.replace("#", "#&NoBreak")
+    return matched
