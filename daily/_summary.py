@@ -138,5 +138,5 @@ def _maybe_escape_str(s: str, escape: bool) -> str:
 
 def _re_maybe_escape_hash(match_: re.Match[str]) -> str:
     if matched := match_.group(0):
-        return matched.replace("#", "#&NoBreak")
+        return matched.replace("#", "#&NoBreak;")
     return matched
