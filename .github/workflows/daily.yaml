@@ -9,8 +9,19 @@ jobs:
   create-summary:
     runs-on: ubuntu-latest
     permissions: write-all
+    strategy:
+      matrix:
+        include:
+          - token_name: GH_TOKEN
+            display_name: Personal
+            extra_label: "personal"
+            username: "benmezger"
+          - token_name: GH_ENTERPRISE_TOKEN
+            display_name: Work
+            extra_label: "work"
+            username: "benjaminm_backbase"
     concurrency:
-      group: daily
+      group: daily-${{ matrix.token_name }}
       cancel-in-progress: true
     env:
       SUMMARY_REPOSITORY: "benmezger/summaries"
@@ -38,16 +49,22 @@ jobs:
       - name: Set timezone
         run: sudo timedatectl set-timezone "$TIMEZONE"
 
+      - name: Set current year
+        run:
+          echo "CURRENT_YEAR=$(date '+%Y')" >> $GITHUB_ENV
+
       - name: Install GH milestones extension
         run: gh extension install valeriobelli/gh-milestone
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets[matrix.token_name] }}
 
       - name: Generate daily summary
         id: summary
         run: |
-          FILENAME="daily.md"
-          uv run task cli --file $FILENAME daily-summary --yesterday --escape --no-ollama
+          FILENAME="daily-${{ matrix.token_name }}.md"
+          uv run task cli \
+              --file $FILENAME --username ${{ matrix.username }} \
+              daily-summary --yesterday --escape --no-ollama
 
           if [ -f $FILENAME ]; then
             while IFS= read -r line || [[ -n "$line" ]]; do
@@ -68,13 +85,8 @@ jobs:
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
           fi
-
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Set current year
-        run:
-          echo "CURRENT_YEAR=$(date '+%Y')" >> $GITHUB_ENV
+          GITHUB_TOKEN: ${{ secrets[matrix.token_name] }}
 
       - name: Maybe create milestone
         run: |
@@ -96,12 +108,18 @@ jobs:
       - name: Maybe post issue and lock
         if: ${{ steps.summary.outputs.text }}
         run: |
+          EXTRA_LABEL="${{ matrix.extra_label }}"
+          LABEL_FLAGS="--label summary"
+          if [ -n "$EXTRA_LABEL" ]; then
+            LABEL_FLAGS="$LABEL_FLAGS --label $EXTRA_LABEL"
+          fi
+
           ISSUE_URL=$(gh issue --repo "$SUMMARY_REPOSITORY" create \
-            --title "Daily Summary of $(date -d 'yesterday' '+%Y-%m-%d')" \
+            --title "[${{ matrix.display_name }}] Daily Summary of $(date -d 'yesterday' '+%Y-%m-%d')" \
             --body "${{ steps.summary.outputs.text }}" \
             --assignee "$SUMMARY_ASSIGNEE" \
             --milestone "$CURRENT_YEAR" \
-            --label summary | grep -o 'https://github.com[^ ]*')
+            $LABEL_FLAGS | grep -o 'https://github.com[^ ]*')
 
           gh issue lock "$ISSUE_URL"
         env:
@@ -110,12 +128,18 @@ jobs:
       - name: Maybe post issue without a summary
         if: ${{ steps.summary.outputs.text == '' }}
         run: |
+          EXTRA_LABEL="${{ matrix.extra_label }}"
+          LABEL_FLAGS="--label no-summary"
+          if [ -n "$EXTRA_LABEL" ]; then
+            LABEL_FLAGS="$LABEL_FLAGS --label $EXTRA_LABEL"
+          fi
+
           ISSUE_URL=$(gh issue --repo "$SUMMARY_REPOSITORY" create \
-            --title "No summary available for $(date -d 'yesterday' '+%Y-%m-%d')" \
+            --title "[${{ matrix.display_name }}] No summary available for $(date -d 'yesterday' '+%Y-%m-%d')" \
             --body "No summary available." \
             --assignee "$SUMMARY_ASSIGNEE" \
             --milestone "$CURRENT_YEAR" \
-            --label no-summary | grep -o 'https://github.com[^ ]*')
+            $LABEL_FLAGS | grep -o 'https://github.com[^ ]*')
 
           gh issue lock "$ISSUE_URL"
         env:

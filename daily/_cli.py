@@ -35,7 +35,7 @@ class _Context(NamedTuple):
     "-u",
     "--username",
     type=str,
-    default="benmezger",
+    default=getenv("GITHUB_USERNAME", "benmezger"),
     show_default=True,
 )
 @click.option(
