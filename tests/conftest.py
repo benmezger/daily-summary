@@ -8,7 +8,12 @@ from datetime import datetime
 
 import pytest
 
-from daily.models import EventType, GithubEvent, Repository, RepositoryEvents
+from daily.models import EventType, GithubEvent, Repository, RepositoryEvents, User
+
+
+@pytest.fixture
+def account() -> User:
+    return User(login="benmezger", name="Ben Mezger")
 
 
 @pytest.fixture

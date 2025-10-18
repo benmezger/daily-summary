@@ -9,17 +9,27 @@ from collections import defaultdict
 from functools import partial
 from typing import TextIO
 
-from .models import EventType, GithubEvent, RepositoryEvents, Summary
+from .models import EventType, GithubEvent, RepositoryEvents, Summary, User
 from .ollama import Ollama
 
 
 def maybe_write_header(
-    events: list[RepositoryEvents], file: TextIO, date: datetime.date
+    account: User,
+    events: list[RepositoryEvents],
+    file: TextIO,
+    date: datetime.date,
+    escape: bool = False,
 ) -> None:
     if not events:
         return
 
     file.write(f"Summary of *{date:%Y-%m-%d}*\n")
+    file.write(
+        "From "
+        + _maybe_escape_str(
+            f"[`{account.username}`](https://github.com/{account.username})\n", escape
+        )
+    )
 
 
 def maybe_write_github_summaries(

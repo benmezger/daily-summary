@@ -175,8 +175,9 @@ def daily_summary(
     ]
 
     ollama_handler = Ollama(host=ollama_url, model=ollama_model) if ollama else None
+    account = context.github.get_user()
 
-    maybe_write_header(events, context.file, filter_date)
+    maybe_write_header(account, events, context.file, filter_date, escape)
     maybe_write_github_summaries(events, ollama_handler, context.file, escape)
     maybe_write_misc(events, context.file)
 

@@ -14,21 +14,25 @@ from daily._summary import (
     maybe_write_header,
     maybe_write_misc,
 )
-from daily.models import RepositoryEvents
+from daily.models import RepositoryEvents, User
 
 
-def test_maybe_write_header(repository_events: list[RepositoryEvents]):
+def test_maybe_write_header(account: User, repository_events: list[RepositoryEvents]):
     file = io.StringIO()
 
-    maybe_write_header(repository_events, file, date(2025, 3, 16))
+    maybe_write_header(account, repository_events, file, date(2025, 3, 16), False)
     file.seek(0)
 
-    assert file.read() == "Summary of *2025-03-16*\n"
+    assert (
+        file.read()
+        == "Summary of *2025-03-16*\n"
+        + "From [`benmezger`](https://github.com/benmezger)\n"
+    )
 
 
-def test_maybe_write_header_skips_on_empty_events():
+def test_maybe_write_header_skips_on_empty_events(account: User):
     file = io.StringIO()
-    maybe_write_header([], file, date(2025, 3, 16))
+    maybe_write_header(account, [], file, date(2025, 3, 16))
     file.seek(0)
 
     assert file.read() == ""
