@@ -49,6 +49,16 @@ _Tags summary_
 [`repository-owner-1`](https://github.com/repository-owner-1)
 - [`repository-name-1`](https://github.com/repository-owner-1/repository-name-1)
   - Title Tag 1 [[Tag](http://github.com/repo/Tag)] 
+
+_Comments summary_
+
+[`repository-owner-0`](https://github.com/repository-owner-0)
+- [`repository-name-0`](https://github.com/repository-owner-0/repository-name-0)
+  - Title Comment 0 [[Comment](http://github.com/repo/Comment)] 
+
+[`repository-owner-1`](https://github.com/repository-owner-1)
+- [`repository-name-1`](https://github.com/repository-owner-1/repository-name-1)
+  - Title Comment 1 [[Comment](http://github.com/repo/Comment)] 
 '''
 
 snapshots['test_maybe_write_github_summaries[True] 1'] = '''
@@ -93,6 +103,16 @@ _Tags summary_
 [\\`repository-owner-1\\`](https://github.com/repository-owner-1)
 - [\\`repository-name-1\\`](https://github.com/repository-owner-1/repository-name-1)
   - Title Tag 1 [[Tag](http://github.com/repo/Tag)] 
+
+_Comments summary_
+
+[\\`repository-owner-0\\`](https://github.com/repository-owner-0)
+- [\\`repository-name-0\\`](https://github.com/repository-owner-0/repository-name-0)
+  - Title Comment 0 [[Comment](http://github.com/repo/Comment)] 
+
+[\\`repository-owner-1\\`](https://github.com/repository-owner-1)
+- [\\`repository-name-1\\`](https://github.com/repository-owner-1/repository-name-1)
+  - Title Comment 1 [[Comment](http://github.com/repo/Comment)] 
 '''
 
 snapshots['test_maybe_write_misc 1'] = '''

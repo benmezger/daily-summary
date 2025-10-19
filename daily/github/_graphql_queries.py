@@ -113,3 +113,56 @@ tags: Final[str] = """
   }}
 }}
 """
+
+comments: Final[str] = """
+{{
+  search(query: "commenter:{username} updated:{updated_at}", type: ISSUE, first: 100) {{
+    edges {{
+      node {{
+        ... on Issue {{
+          id
+          title
+          url
+          state
+          createdAt
+          repository {{
+            nameWithOwner
+          }}
+          comments(last: 100) {{
+            nodes {{
+              author {{
+                login
+              }}
+              body
+              createdAt
+              updatedAt
+              url
+            }}
+          }}
+        }}
+        ... on PullRequest {{
+          id
+          title
+          url
+          state
+          createdAt
+          repository {{
+            nameWithOwner
+          }}
+          comments(last: 100) {{
+            nodes {{
+              author {{
+                login
+              }}
+              body
+              createdAt
+              updatedAt
+              url
+            }}
+          }}
+        }}
+      }}
+    }}
+  }}
+}}
+"""

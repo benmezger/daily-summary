@@ -107,6 +107,16 @@ def list_tags(ctx: click.Context, date: datetime) -> None:
 
 @cli.command()
 @date_option
+@click.pass_context
+def list_comments(ctx: click.Context, date: datetime) -> None:
+    context: _Context = ctx.obj
+    context.file.writelines(
+        [f"{event}\n" for event in context.github.comments_from(date)]
+    )
+
+
+@cli.command()
+@date_option
 @click.option(
     "--ollama-model",
     type=str,
@@ -162,6 +172,7 @@ def daily_summary(
         context.github.commits_from(filter_date),
         context.github.reviews_from(filter_date),
         context.github.tags_from(filter_date),
+        context.github.comments_from(filter_date),
     ):
         repository_events[str(event.repository)].append(event)
 

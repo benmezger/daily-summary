@@ -114,6 +114,45 @@ class Github:
                     }
                 )
 
+    def comments_from(self, created_at: datetime) -> Iterable[GithubEvent]:
+        response = self._make_graphql_query(
+            queries.comments.format(
+                username=self.username,
+                updated_at=f"{created_at:%Y-%m-%d}",
+            )
+        )
+
+        for edge in pydash.get(response, "data.search.edges", []):
+            node = edge.get("node", {})
+
+            for comment in pydash.get(node, "comments.nodes", []):
+                if pydash.get(comment, "author.login") != self.username:
+                    continue
+
+                comment_created_at = comment.get("createdAt")
+                comment_datetime = datetime.fromisoformat(comment_created_at)
+
+                if comment_datetime.date() != created_at.date():
+                    continue
+
+                yield GithubEvent.model_validate(
+                    {
+                        "id": f"comment-{node.get('id')}-"
+                        f"{comment.get('url').split('#')[-1]}",
+                        "title": f"Commented on: {node.get('title')}",
+                        "body": comment.get("body"),
+                        "url": comment.get("url"),
+                        "created_at": comment_created_at,
+                        "repository": {
+                            "nameWithOwner": pydash.get(
+                                node, "repository.nameWithOwner"
+                            )
+                        },
+                        "state": node.get("state"),
+                        "event_type": "Comment",
+                    }
+                )
+
     def _make_graphql_query(self, query: str) -> dict[str, Any]:
         response = self._client.post(
             "https://api.github.com/graphql", json={"query": query}

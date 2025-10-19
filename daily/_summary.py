@@ -66,6 +66,13 @@ def maybe_write_github_summaries(
         repository_events=_order_by_org_event_type(repository_events, (EventType.TAG,)),
     )
 
+    summary(
+        title="\n_Comments summary_\n",
+        repository_events=_order_by_org_event_type(
+            repository_events, (EventType.COMMENT,)
+        ),
+    )
+
 
 def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
     if not events:
