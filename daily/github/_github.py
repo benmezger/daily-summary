@@ -10,7 +10,7 @@ from datetime import date
 import pydash
 from httpx import Client
 
-from daily.models import GithubEvent, User
+from daily.models import Account, GithubEvent
 
 from . import _graphql_queries as queries
 
@@ -25,15 +25,15 @@ class Github:
         )
 
         self.username = username
-        self._user: User | None = None
+        self._account: Account | None = None
 
-    def get_user(self) -> User:
-        if self._user:
-            return self._user
+    def get_user(self) -> Account:
+        if self._account:
+            return self._account
 
         response = self._client.get("https://api.github.com/user")
         response.raise_for_status()
-        return User.model_validate(response.json())
+        return Account.model_validate(response.json())
 
     def issues_from(
         self,

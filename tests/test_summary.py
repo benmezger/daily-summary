@@ -14,10 +14,12 @@ from daily._summary import (
     maybe_write_header,
     maybe_write_misc,
 )
-from daily.models import RepositoryEvents, User
+from daily.models import Account, RepositoryEvents
 
 
-def test_maybe_write_header(account: User, repository_events: list[RepositoryEvents]):
+def test_maybe_write_header(
+    account: Account, repository_events: list[RepositoryEvents]
+):
     file = io.StringIO()
 
     maybe_write_header(account, repository_events, file, date(2025, 3, 16), False)
@@ -30,7 +32,7 @@ def test_maybe_write_header(account: User, repository_events: list[RepositoryEve
     )
 
 
-def test_maybe_write_header_skips_on_empty_events(account: User):
+def test_maybe_write_header_skips_on_empty_events(account: Account):
     file = io.StringIO()
     maybe_write_header(account, [], file, date(2025, 3, 16))
     file.seek(0)

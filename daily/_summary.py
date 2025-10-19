@@ -9,12 +9,12 @@ from collections import defaultdict
 from functools import partial
 from typing import TextIO
 
-from .models import EventType, GithubEvent, RepositoryEvents, Summary, User
+from .models import Account, EventType, GithubEvent, RepositoryEvents, Summary
 from .ollama import Ollama
 
 
 def maybe_write_header(
-    account: User,
+    account: Account,
     events: list[RepositoryEvents],
     file: TextIO,
     date: datetime.date,

@@ -18,7 +18,7 @@ from pydantic import (
 )
 
 
-class User(BaseModel):
+class Account(BaseModel):
     username: str = Field(alias="login")
     name: str
 
