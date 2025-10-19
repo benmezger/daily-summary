@@ -1,6 +1,12 @@
 name: Create daily summary
 on:
   workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date for the summary (YYYY-MM-DD). Defaults to yesterday.'
+        required: false
+        type: string
+        default: ''
   schedule:
     # 23:00 UTC = 00:00 CET (Winter) / 01:00 CEST (Summer)
     - cron: "0 23 * * *"
@@ -55,6 +61,14 @@ jobs:
       - name: Set timezone
         run: sudo timedatectl set-timezone "$TIMEZONE"
 
+      - name: Set target date
+        run: |
+          if [ -n "${{ inputs.date }}" ]; then
+            echo "TARGET_DATE=${{ inputs.date }}" >> $GITHUB_ENV
+          else
+            echo "TARGET_DATE=$(date -d 'yesterday' '+%Y-%m-%d')" >> $GITHUB_ENV
+          fi
+
       - name: Set current year
         run:
           echo "CURRENT_YEAR=$(date '+%Y')" >> $GITHUB_ENV
@@ -70,7 +84,7 @@ jobs:
           FILENAME="daily-${{ matrix.token_name }}.md"
           uv run task cli \
               --file $FILENAME --username ${{ matrix.username }} \
-              daily-summary --yesterday --escape --no-ollama
+              daily-summary --date "$TARGET_DATE" --escape --no-ollama
 
           if [ -f $FILENAME ]; then
             while IFS= read -r line || [[ -n "$line" ]]; do
@@ -121,7 +135,7 @@ jobs:
           fi
 
           ISSUE_URL=$(gh issue --repo "$SUMMARY_REPOSITORY" create \
-            --title "[${{ matrix.display_name }}] Daily Summary of $(date -d 'yesterday' '+%Y-%m-%d')" \
+            --title "[${{ matrix.display_name }}] Daily Summary of $TARGET_DATE" \
             --body "${{ steps.summary.outputs.text }}" \
             --assignee "$SUMMARY_ASSIGNEE" \
             --milestone "$CURRENT_YEAR" \
@@ -141,7 +155,7 @@ jobs:
           fi
 
           ISSUE_URL=$(gh issue --repo "$SUMMARY_REPOSITORY" create \
-            --title "[${{ matrix.display_name }}] No summary available for $(date -d 'yesterday' '+%Y-%m-%d')" \
+            --title "[${{ matrix.display_name }}] No summary available for $TARGET_DATE" \
             --body "No summary available." \
             --assignee "$SUMMARY_ASSIGNEE" \
             --milestone "$CURRENT_YEAR" \
