@@ -77,3 +77,39 @@ reviews: Final[str] = """
   }}
 }}
 """
+
+tags: Final[str] = """
+{{
+  viewer {{
+    login
+    repositories(first: 100, ownerAffiliations: [OWNER]) {{
+      nodes {{
+        nameWithOwner
+        refs(refPrefix: "refs/tags/", first: 100, orderBy: {{field: TAG_COMMIT_DATE,
+             direction: ASC}}) {{
+          nodes {{
+            name
+            target {{
+              ... on Tag {{
+                tagger {{
+                  name
+                  email
+                  date
+                }}
+              }}
+              ... on Commit {{
+                committedDate
+                author {{
+                  name
+                  email
+                  date
+                }}
+              }}
+            }}
+          }}
+        }}
+      }}
+    }}
+  }}
+}}
+"""

@@ -31,6 +31,7 @@ class EventType(StrEnum):
     ISSUE = "Issue"
     COMMIT = "Commit"
     REVIEW = "Review"
+    TAG = "Tag"
 
 
 class Repository(BaseModel):

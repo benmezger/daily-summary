@@ -61,6 +61,11 @@ def maybe_write_github_summaries(
         ),
     )
 
+    summary(
+        title="\n_Tags summary_\n",
+        repository_events=_order_by_org_event_type(repository_events, (EventType.TAG,)),
+    )
+
 
 def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
     if not events:

@@ -5,7 +5,8 @@
 
 
 from collections.abc import Iterable
-from datetime import date
+from datetime import datetime
+from typing import Any
 
 import pydash
 from httpx import Client
@@ -37,10 +38,9 @@ class Github:
 
     def issues_from(
         self,
-        created_at: date,
+        created_at: datetime,
     ) -> Iterable[GithubEvent]:
         yield from self._make_graphql_request(
-            "https://api.github.com/graphql",
             queries.issues.format(
                 username=self.username,
                 created_at=f"{created_at:%Y-%m-%d}",
@@ -50,7 +50,7 @@ class Github:
 
     def commits_from(
         self,
-        created_at: date,
+        created_at: datetime,
     ) -> Iterable[GithubEvent]:
         query = (
             f"author:{self.username}+committer-date:{created_at:%Y-%m-%d}"
@@ -62,9 +62,8 @@ class Github:
         for item in pydash.get(response.json(), "items", []):
             yield GithubEvent.model_validate(item)
 
-    def reviews_from(self, updated_at: date) -> Iterable[GithubEvent]:
+    def reviews_from(self, updated_at: datetime) -> Iterable[GithubEvent]:
         for event in self._make_graphql_request(
-            "https://api.github.com/graphql",
             queries.reviews.format(
                 username=self.username,
                 updated_at=f"{updated_at:%Y-%m-%d}",
@@ -74,20 +73,59 @@ class Github:
             for review in event.reviews:
                 if review.username != self.username:
                     continue
-                if review.updated_at.date() != updated_at:
+                if review.updated_at.date() != updated_at.date():
                     continue
 
                 yield event
                 break
 
-    def _make_graphql_request(
-        self, url: str, query: str, path: str
-    ) -> list[GithubEvent]:
-        response = self._client.post(url, json={"query": query})
+    def tags_from(self, created_at: datetime) -> Iterable[GithubEvent]:
+        response = self._make_graphql_query(queries.tags.format())
+        repositories: list = pydash.get(response, "data.viewer.repositories.nodes", [])
+
+        for repo in repositories:
+            repo_name = repo.get("nameWithOwner")
+
+            for ref in pydash.get(repo, "refs.nodes", []):
+                tag_name = ref.get("name")
+                target = ref.get("target", {})
+
+                # Get date from annotated tag or commit
+                if tagger := target.get("tagger"):
+                    tag_date = tagger.get("date")
+                elif author := target.get("author"):
+                    tag_date = author.get("date") or target.get("committedDate")
+                else:
+                    continue
+
+                # Filter by created_at date
+                tag_datetime = datetime.fromisoformat(tag_date)
+                if tag_datetime.date() != created_at.date():
+                    continue
+
+                yield GithubEvent.model_validate(
+                    {
+                        "id": f"tag-{repo_name}-{tag_name}",
+                        "title": f"Tagged {tag_name}",
+                        "url": f"https://github.com/{repo_name}/releases/tag/{tag_name}",
+                        "created_at": tag_date,
+                        "repository": {"nameWithOwner": repo_name},
+                        "event_type": "Tag",
+                    }
+                )
+
+    def _make_graphql_query(self, query: str) -> dict[str, Any]:
+        response = self._client.post(
+            "https://api.github.com/graphql", json={"query": query}
+        )
         response.raise_for_status()
+        return response.json()
+
+    def _make_graphql_request(self, query: str, path: str) -> list[GithubEvent]:
+        response = self._make_graphql_query(query)
 
         results = list[GithubEvent]()
-        for edge in pydash.get(response.json(), path, []):
+        for edge in pydash.get(response, path, []):
             if node := pydash.get(edge, "node", None):
                 results.append(GithubEvent.model_validate(node))
 

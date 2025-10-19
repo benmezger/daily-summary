@@ -7,7 +7,7 @@
 import sys
 from collections import defaultdict
 from collections.abc import Callable
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from functools import wraps
 from itertools import chain
 from os import getenv
@@ -72,7 +72,7 @@ def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
 @cli.command()
 @date_option
 @click.pass_context
-def list_issues(ctx: click.Context, date: date) -> None:
+def list_issues(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
         [f"{event}\n" for event in context.github.issues_from(date)]
@@ -82,7 +82,7 @@ def list_issues(ctx: click.Context, date: date) -> None:
 @cli.command()
 @date_option
 @click.pass_context
-def list_commits(ctx: click.Context, date: date) -> None:
+def list_commits(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
         [f"{event}\n" for event in context.github.commits_from(date)]
@@ -95,6 +95,14 @@ def account(ctx: click.Context) -> None:
     context: _Context = ctx.obj
     acc = context.github.get_user()
     context.file.write(f"{acc}\n")
+
+
+@cli.command()
+@date_option
+@click.pass_context
+def list_tags(ctx: click.Context, date: datetime) -> None:
+    context: _Context = ctx.obj
+    context.file.writelines([f"{event}\n" for event in context.github.tags_from(date)])
 
 
 @cli.command()
@@ -147,14 +155,13 @@ def daily_summary(
 
     repository_events: dict[str, list[GithubEvent]] = defaultdict(list)
 
-    filter_date = (
-        (datetime.now() - timedelta(days=1)).date() if yesterday else date.date()
-    )
+    filter_date = (datetime.now() - timedelta(days=1)) if yesterday else date
 
     for event in chain(
         context.github.issues_from(filter_date),
         context.github.commits_from(filter_date),
         context.github.reviews_from(filter_date),
+        context.github.tags_from(filter_date),
     ):
         repository_events[str(event.repository)].append(event)
 
