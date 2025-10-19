@@ -36,14 +36,20 @@ jobs:
           python-version-file: ".python-version"
 
       - name: Install uv
-        id: setup-uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.6.4"
           enable-cache: true
 
+      - name: Cache virtual environment
+        id: cache-venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
       - name: Install project dependencies
-        if: steps.setup-uv.outputs.cache-hit != 'true'
+        if: steps.cache-venv.outputs.cache-hit != 'true'
         run: uv sync
 
       - name: Set timezone
