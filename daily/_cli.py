@@ -6,9 +6,12 @@
 
 import sys
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import date, datetime, timedelta
+from functools import wraps
+from itertools import chain
 from os import getenv
-from typing import NamedTuple, TextIO
+from typing import Any, NamedTuple, TextIO
 
 import click
 
@@ -21,6 +24,22 @@ from .ollama import Ollama
 class _Context(NamedTuple):
     github: Github
     file: TextIO
+
+
+def date_option(f: Callable[..., Any]) -> Callable[..., Any]:
+    @click.option(
+        "-d",
+        "--date",
+        type=click.DateTime(formats=("%Y-%m-%d", "%d-%m-%Y")),
+        required=True,
+        default=datetime.now().date().strftime("%d-%m-%Y"),
+        show_default=True,
+    )
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return f(*args, **kwargs)
+
+    return wrapper
 
 
 @click.group()
@@ -51,14 +70,7 @@ def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
 
 
 @cli.command()
-@click.option(
-    "-d",
-    "--date",
-    type=click.DateTime(formats=("%Y-%m-%d", "%d-%m-%Y")),
-    required=True,
-    default=datetime.now().date().strftime("%d-%m-%Y"),
-    show_default=True,
-)
+@date_option
 @click.pass_context
 def list_issues(ctx: click.Context, date: date) -> None:
     context: _Context = ctx.obj
@@ -66,26 +78,15 @@ def list_issues(ctx: click.Context, date: date) -> None:
         [f"{event}\n" for event in context.github.issues_from(date)]
     )
 
-    context.file.close()
-
 
 @cli.command()
-@click.option(
-    "-d",
-    "--date",
-    type=click.DateTime(formats=("%Y-%m-%d", "%d-%m-%Y")),
-    required=True,
-    default=datetime.now().date().strftime("%d-%m-%Y"),
-    show_default=True,
-)
+@date_option
 @click.pass_context
 def list_commits(ctx: click.Context, date: date) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
         [f"{event}\n" for event in context.github.commits_from(date)]
     )
-
-    context.file.close()
 
 
 @cli.command()
@@ -94,18 +95,10 @@ def account(ctx: click.Context) -> None:
     context: _Context = ctx.obj
     acc = context.github.get_user()
     context.file.write(f"{acc}\n")
-    context.file.close()
 
 
 @cli.command()
-@click.option(
-    "-d",
-    "--date",
-    type=click.DateTime(formats=("%Y-%m-%d", "%d-%m-%Y")),
-    required=True,
-    default=datetime.now().date().strftime("%d-%m-%Y"),
-    show_default=True,
-)
+@date_option
 @click.option(
     "--ollama-model",
     type=str,
@@ -152,16 +145,16 @@ def daily_summary(
 ) -> None:
     context: _Context = ctx.obj
 
-    repository_events: dict[str, list[GithubEvent]] = defaultdict(list[GithubEvent])
+    repository_events: dict[str, list[GithubEvent]] = defaultdict(list)
 
-    filter_date = date.date()
-    if yesterday:
-        filter_date = (datetime.now() - timedelta(days=1)).date()
+    filter_date = (
+        (datetime.now() - timedelta(days=1)).date() if yesterday else date.date()
+    )
 
-    for event in (
-        list(context.github.issues_from(filter_date))
-        + list(context.github.commits_from(filter_date))
-        + list(context.github.reviews_from(filter_date))
+    for event in chain(
+        context.github.issues_from(filter_date),
+        context.github.commits_from(filter_date),
+        context.github.reviews_from(filter_date),
     ):
         repository_events[str(event.repository)].append(event)
 
@@ -180,5 +173,3 @@ def daily_summary(
     maybe_write_header(account, events, context.file, filter_date, escape)
     maybe_write_github_summaries(events, ollama_handler, context.file, escape)
     maybe_write_misc(events, context.file)
-
-    context.file.close()
