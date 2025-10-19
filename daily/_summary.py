@@ -40,38 +40,19 @@ def maybe_write_github_summaries(
 ) -> None:
     summary = partial(_maybe_write_summary, file=file, escape=escape, ollama=ollama)
 
-    summary(
-        title="\n_PR/Issue summary_\n",
-        repository_events=_order_by_org_event_type(
-            repository_events, (EventType.ISSUE, EventType.PULL_REQUEST)
-        ),
-    )
+    sections = [
+        ("\n_PR/Issue summary_\n", (EventType.ISSUE, EventType.PULL_REQUEST)),
+        ("\n_PR/Issue review_\n", (EventType.REVIEW,)),
+        ("\n_Commit summary_\n", (EventType.COMMIT,)),
+        ("\n_Tags summary_\n", (EventType.TAG,)),
+        ("\n_Comments summary_\n", (EventType.COMMENT,)),
+    ]
 
-    summary(
-        title="\n_PR/Issue review_\n",
-        repository_events=_order_by_org_event_type(
-            repository_events, (EventType.REVIEW,)
-        ),
-    )
-
-    summary(
-        title="\n_Commit summary_\n",
-        repository_events=_order_by_org_event_type(
-            repository_events, (EventType.COMMIT,)
-        ),
-    )
-
-    summary(
-        title="\n_Tags summary_\n",
-        repository_events=_order_by_org_event_type(repository_events, (EventType.TAG,)),
-    )
-
-    summary(
-        title="\n_Comments summary_\n",
-        repository_events=_order_by_org_event_type(
-            repository_events, (EventType.COMMENT,)
-        ),
-    )
+    for title, event_types in sections:
+        summary(
+            title=title,
+            repository_events=_order_by_org_event_type(repository_events, event_types),
+        )
 
 
 def maybe_write_misc(events: list[RepositoryEvents], file: TextIO) -> None:
