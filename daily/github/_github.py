@@ -199,7 +199,7 @@ class Github:
         retry=tenacity.retry_if_exception_type(
             (httpx.ReadTimeout, httpx.HTTPStatusError)
         ),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=5),
     )
     def _make_request(
         self,
