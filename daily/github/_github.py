@@ -6,9 +6,11 @@
 
 from collections.abc import Iterable
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal, overload
 
+import httpx
 import pydash
+import tenacity
 from httpx import Client
 
 from daily.models import Account, GithubEvent
@@ -28,6 +30,10 @@ class Github:
         self.username = username
         self._account: Account | None = None
 
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(httpx.ReadTimeout),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+    )
     def get_user(self) -> Account:
         if self._account:
             return self._account
@@ -48,6 +54,10 @@ class Github:
             path="data.search.edges",
         )
 
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(httpx.ReadTimeout),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+    )
     def commits_from(
         self,
         created_at: datetime,
@@ -56,8 +66,10 @@ class Github:
             f"author:{self.username}+committer-date:{created_at:%Y-%m-%d}"
             "+sort:committer-date"
         )
-        response = self._client.get(f"https://api.github.com/search/commits?q={query}")
-        response.raise_for_status()
+
+        response = self._make_request(
+            "get", f"https://api.github.com/search/commits?q={query}"
+        )
 
         for item in pydash.get(response.json(), "items", []):
             yield GithubEvent.model_validate(item)
@@ -80,7 +92,11 @@ class Github:
                 break
 
     def tags_from(self, created_at: datetime) -> Iterable[GithubEvent]:
-        response = self._make_graphql_query(queries.tags.format())
+        response = self._make_request(
+            "post",
+            "https://api.github.com/graphql",
+            json={"query": queries.tags.format()},
+        )
         repositories: list = pydash.get(response, "data.viewer.repositories.nodes", [])
 
         for repo in repositories:
@@ -115,11 +131,15 @@ class Github:
                 )
 
     def comments_from(self, created_at: datetime) -> Iterable[GithubEvent]:
-        response = self._make_graphql_query(
-            queries.comments.format(
-                username=self.username,
-                updated_at=f"{created_at:%Y-%m-%d}",
-            )
+        response = self._make_request(
+            "post",
+            "https://api.github.com/graphql",
+            json={
+                "query": queries.comments.format(
+                    username=self.username,
+                    updated_at=f"{created_at:%Y-%m-%d}",
+                )
+            },
         )
 
         for edge in pydash.get(response, "data.search.edges", []):
@@ -153,15 +173,10 @@ class Github:
                     }
                 )
 
-    def _make_graphql_query(self, query: str) -> dict[str, Any]:
-        response = self._client.post(
-            "https://api.github.com/graphql", json={"query": query}
-        )
-        response.raise_for_status()
-        return response.json()
-
     def _make_graphql_request(self, query: str, path: str) -> list[GithubEvent]:
-        response = self._make_graphql_query(query)
+        response = self._make_request(
+            "post", "https://api.github.com/graphql", json={"query": query}
+        )
 
         results = list[GithubEvent]()
         for edge in pydash.get(response, path, []):
@@ -169,3 +184,34 @@ class Github:
                 results.append(GithubEvent.model_validate(node))
 
         return results
+
+    @overload
+    def _make_request(
+        self, method: Literal["get"], url: str, json: Literal[None] = None
+    ) -> httpx.Response: ...
+
+    @overload
+    def _make_request(
+        self, method: Literal["post"], url: str, json: dict[str, Any]
+    ) -> httpx.Response: ...
+
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(
+            (httpx.ReadTimeout, httpx.HTTPStatusError)
+        ),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+    )
+    def _make_request(
+        self,
+        method: Literal["post", "get"],
+        url: str,
+        json: dict[str, Any] | None = None,
+    ) -> httpx.Response:
+        kwargs = {}
+        if method == "post":
+            kwargs["json"] = json
+
+        response: httpx.Response = getattr(self._client, method)(url=url, **kwargs)
+        response.raise_for_status()
+
+        return response
