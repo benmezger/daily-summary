@@ -38,8 +38,7 @@ class Github:
         if self._account:
             return self._account
 
-        response = self._client.get("https://api.github.com/user")
-        response.raise_for_status()
+        response = self._make_request("get", "https://api.github.com/user")
         return Account.model_validate(response.json())
 
     def issues_from(
