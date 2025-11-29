@@ -102,12 +102,13 @@ def _maybe_write_summary(
 
             for evt in events:
                 summary = Summary.from_event(evt)
-                title = _maybe_summarize(summary.title, ollama)
+                summarized_title = _maybe_summarize(summary.title, ollama)
+                state_suffix = f"/ [{summary.state}]\n" if summary.state else "\n"
 
                 file.write(
-                    _maybe_escape_str(f"  - {title} ", escape)
+                    _maybe_escape_str(f"  - {summarized_title} ", escape)
                     + f"[[{summary.event_type.value}]({summary.event_url})] "
-                    + (f"/ [{summary.state}]\n" if summary.state else "\n")
+                    f"{state_suffix}"
                 )
 
 
