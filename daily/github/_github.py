@@ -96,7 +96,9 @@ class Github:
             "https://api.github.com/graphql",
             json={"query": queries.tags.format()},
         )
-        repositories: list = pydash.get(response, "data.viewer.repositories.nodes", [])
+        repositories: list = pydash.get(
+            response.json(), "data.viewer.repositories.nodes", []
+        )
 
         for repo in repositories:
             repo_name = repo.get("nameWithOwner")
@@ -141,7 +143,7 @@ class Github:
             },
         )
 
-        for edge in pydash.get(response, "data.search.edges", []):
+        for edge in pydash.get(response.json(), "data.search.edges", []):
             node = edge.get("node", {})
 
             for comment in pydash.get(node, "comments.nodes", []):
@@ -178,7 +180,7 @@ class Github:
         )
 
         results = list[GithubEvent]()
-        for edge in pydash.get(response, path, []):
+        for edge in pydash.get(response.json(), path, []):
             if node := pydash.get(edge, "node", None):
                 results.append(GithubEvent.model_validate(node))
 
