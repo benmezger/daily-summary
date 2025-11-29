@@ -70,8 +70,8 @@ jobs:
           fi
 
       - name: Set current year
-        run:
-          echo "CURRENT_YEAR=$(date '+%Y')" >> $GITHUB_ENV
+        run: |
+          echo "CURRENT_YEAR=$(date -d "$TARGET_DATE" '+%Y')" >> $GITHUB_ENV
 
       - name: Install GH milestones extension
         run: gh extension install valeriobelli/gh-milestone
