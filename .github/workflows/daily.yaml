@@ -135,7 +135,7 @@ jobs:
           fi
 
           ISSUE_URL=$(gh issue --repo "$SUMMARY_REPOSITORY" create \
-            --title "[${{ matrix.display_name }}] Daily Summary of $TARGET_DATE" \
+            --title "[${{ matrix.display_name }}] Daily Summary of \`$TARGET_DATE\`" \
             --body "${{ steps.summary.outputs.text }}" \
             --assignee "$SUMMARY_ASSIGNEE" \
             --milestone "$CURRENT_YEAR" \
@@ -155,7 +155,7 @@ jobs:
           fi
 
           ISSUE_URL=$(gh issue --repo "$SUMMARY_REPOSITORY" create \
-            --title "[${{ matrix.display_name }}] No summary available for $TARGET_DATE" \
+            --title "[${{ matrix.display_name }}] No summary available for \`$TARGET_DATE\`" \
             --body "No summary available." \
             --assignee "$SUMMARY_ASSIGNEE" \
             --milestone "$CURRENT_YEAR" \
