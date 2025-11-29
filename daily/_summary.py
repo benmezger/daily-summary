@@ -75,6 +75,36 @@ def _maybe_summarize(content: str, ollama: Ollama | None) -> str:
     return content
 
 
+def _write_repository_section(
+    repository: str,
+    events: list[GithubEvent],
+    ollama: Ollama | None,
+    file: TextIO,
+    escape: bool = False,
+) -> None:
+    repository_url = events[0].repository.repository_url
+    file.write(_maybe_escape_str(f"- [`{repository}`]({repository_url})\n", escape))
+    _write_events(events, ollama, file, escape)
+
+
+def _write_events(
+    events: list[GithubEvent],
+    ollama: Ollama | None,
+    file: TextIO,
+    escape: bool = False,
+) -> None:
+    for evt in events:
+        summary = Summary.from_event(evt)
+        summarized_title = _maybe_summarize(summary.title, ollama)
+        state_suffix = f"/ [{summary.state}]\n" if summary.state else "\n"
+
+        file.write(
+            _maybe_escape_str(f"  - {summarized_title} ", escape)
+            + f"[[{summary.event_type.value}]({summary.event_url})] "
+            f"{state_suffix}"
+        )
+
+
 def _maybe_write_summary(
     title: str,
     repository_events: defaultdict[str, defaultdict[str, list[GithubEvent]]],
@@ -95,21 +125,7 @@ def _maybe_write_summary(
         )
 
         for repository, events in repo_events.items():
-            repository_url = events[0].repository.repository_url
-            file.write(
-                _maybe_escape_str(f"- [`{repository}`]({repository_url})\n", escape)
-            )
-
-            for evt in events:
-                summary = Summary.from_event(evt)
-                summarized_title = _maybe_summarize(summary.title, ollama)
-                state_suffix = f"/ [{summary.state}]\n" if summary.state else "\n"
-
-                file.write(
-                    _maybe_escape_str(f"  - {summarized_title} ", escape)
-                    + f"[[{summary.event_type.value}]({summary.event_url})] "
-                    f"{state_suffix}"
-                )
+            _write_repository_section(repository, events, ollama, file, escape)
 
 
 def _order_by_org_event_type(
