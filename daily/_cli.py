@@ -24,6 +24,7 @@ from .ollama import Ollama
 class _Context(NamedTuple):
     github: Github
     file: TextIO
+    excluded_repositories: list[str]
 
 
 def date_option(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -40,6 +41,18 @@ def date_option(f: Callable[..., Any]) -> Callable[..., Any]:
         return f(*args, **kwargs)
 
     return wrapper
+
+
+def validate_repository_names(
+    ctx: click.core.Context, param: click.Option, values: tuple[str]
+) -> tuple[str]:
+    for value in values:
+        if len(value.split("/")) != 2:
+            raise click.BadParameter(
+                f"Expected repository in the format of 'username/repository'. "
+                f"Got '{value}'"
+            )
+    return values
 
 
 @click.group()
@@ -64,9 +77,27 @@ def date_option(f: Callable[..., Any]) -> Callable[..., Any]:
     type=click.File("w"),
     default=sys.stdout,
 )
+@click.option(
+    "-e",
+    "--exclude-repositories",
+    help="Exclude repositories from the generated summary. "
+    "Expects 'username/repository'",
+    multiple=True,
+    callback=validate_repository_names,
+)
 @click.pass_context
-def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
-    ctx.obj = _Context(github=Github(token, username=username), file=file)
+def cli(
+    ctx: click.Context,
+    token: str,
+    username: str,
+    file: TextIO,
+    exclude_repositories: tuple[str],
+) -> None:
+    ctx.obj = _Context(
+        github=Github(token, username=username),
+        file=file,
+        excluded_repositories=list(exclude_repositories),
+    )
 
 
 @cli.command()
@@ -75,7 +106,10 @@ def cli(ctx: click.Context, token: str, username: str, file: TextIO) -> None:
 def list_issues(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
-        [f"{event}\n" for event in context.github.issues_from(date)]
+        [
+            f"{event}\n"
+            for event in context.github.issues_from(date, context.excluded_repositories)
+        ]
     )
 
 
@@ -85,7 +119,12 @@ def list_issues(ctx: click.Context, date: datetime) -> None:
 def list_commits(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
-        [f"{event}\n" for event in context.github.commits_from(date)]
+        [
+            f"{event}\n"
+            for event in context.github.commits_from(
+                date, context.excluded_repositories
+            )
+        ]
     )
 
 
@@ -102,7 +141,12 @@ def account(ctx: click.Context) -> None:
 @click.pass_context
 def list_tags(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
-    context.file.writelines([f"{event}\n" for event in context.github.tags_from(date)])
+    context.file.writelines(
+        [
+            f"{event}\n"
+            for event in context.github.tags_from(date, context.excluded_repositories)
+        ]
+    )
 
 
 @cli.command()
@@ -111,7 +155,12 @@ def list_tags(ctx: click.Context, date: datetime) -> None:
 def list_comments(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
-        [f"{event}\n" for event in context.github.comments_from(date)]
+        [
+            f"{event}\n"
+            for event in context.github.comments_from(
+                date, context.excluded_repositories
+            )
+        ]
     )
 
 
@@ -168,11 +217,11 @@ def daily_summary(
     filter_date = (datetime.now() - timedelta(days=1)) if yesterday else date
 
     for event in chain(
-        context.github.issues_from(filter_date),
-        context.github.commits_from(filter_date),
-        context.github.reviews_from(filter_date),
-        context.github.tags_from(filter_date),
-        context.github.comments_from(filter_date),
+        context.github.issues_from(filter_date, context.excluded_repositories),
+        context.github.commits_from(filter_date, context.excluded_repositories),
+        context.github.reviews_from(filter_date, context.excluded_repositories),
+        context.github.tags_from(filter_date, context.excluded_repositories),
+        context.github.comments_from(filter_date, context.excluded_repositories),
     ):
         repository_events[str(event.repository)].append(event)
 
