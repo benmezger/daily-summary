@@ -42,24 +42,26 @@ class Github:
         return Account.model_validate(response.json())
 
     def issues_from(
-        self,
-        created_at: datetime,
+        self, created_at: datetime, excluded_repositories: list[str]
     ) -> Iterable[GithubEvent]:
-        yield from self._make_graphql_request(
+        for event in self._make_graphql_request(
             queries.issues.format(
                 username=self.username,
                 created_at=f"{created_at:%Y-%m-%d}",
             ),
             path="data.search.edges",
-        )
+        ):
+            if self._should_be_excluded(event.repository.name, excluded_repositories):
+                continue
+
+            yield event
 
     @tenacity.retry(
         retry=tenacity.retry_if_exception_type(httpx.ReadTimeout),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
     )
     def commits_from(
-        self,
-        created_at: datetime,
+        self, created_at: datetime, excluded_repositories: list[str]
     ) -> Iterable[GithubEvent]:
         query = (
             f"author:{self.username}+committer-date:{created_at:%Y-%m-%d}"
@@ -71,9 +73,15 @@ class Github:
         )
 
         for item in pydash.get(response.json(), "items", []):
-            yield GithubEvent.model_validate(item)
+            event = GithubEvent.model_validate(item)
+            if self._should_be_excluded(event.repository.name, excluded_repositories):
+                continue
 
-    def reviews_from(self, updated_at: datetime) -> Iterable[GithubEvent]:
+            yield event
+
+    def reviews_from(
+        self, updated_at: datetime, excluded_repositories: list[str]
+    ) -> Iterable[GithubEvent]:
         for event in self._make_graphql_request(
             queries.reviews.format(
                 username=self.username,
@@ -81,6 +89,9 @@ class Github:
             ),
             path="data.search.edges",
         ):
+            if self._should_be_excluded(event.repository.name, excluded_repositories):
+                continue
+
             for review in event.reviews:
                 if review.username != self.username:
                     continue
@@ -90,7 +101,9 @@ class Github:
                 yield event
                 break
 
-    def tags_from(self, created_at: datetime) -> Iterable[GithubEvent]:
+    def tags_from(
+        self, created_at: datetime, excluded_repositories: list[str]
+    ) -> Iterable[GithubEvent]:
         response = self._make_request(
             "post",
             "https://api.github.com/graphql",
@@ -102,6 +115,9 @@ class Github:
 
         for repo in repositories:
             repo_name = repo.get("nameWithOwner")
+
+            if self._should_be_excluded(repo_name, excluded_repositories):
+                continue
 
             for ref in pydash.get(repo, "refs.nodes", []):
                 tag_name = ref.get("name")
@@ -131,7 +147,9 @@ class Github:
                     }
                 )
 
-    def comments_from(self, created_at: datetime) -> Iterable[GithubEvent]:
+    def comments_from(
+        self, created_at: datetime, excluded_repositories: list[str]
+    ) -> Iterable[GithubEvent]:
         response = self._make_request(
             "post",
             "https://api.github.com/graphql",
@@ -156,6 +174,10 @@ class Github:
                 if comment_datetime.date() != created_at.date():
                     continue
 
+                repository_name = pydash.get(node, "repository.nameWithOwner")
+                if self._should_be_excluded(repository_name, excluded_repositories):
+                    continue
+
                 yield GithubEvent.model_validate(
                     {
                         "id": f"comment-{node.get('id')}-"
@@ -164,11 +186,7 @@ class Github:
                         "body": comment.get("body"),
                         "url": comment.get("url"),
                         "created_at": comment_created_at,
-                        "repository": {
-                            "nameWithOwner": pydash.get(
-                                node, "repository.nameWithOwner"
-                            )
-                        },
+                        "repository": {"nameWithOwner": repository_name},
                         "state": node.get("state"),
                         "event_type": "Comment",
                     }
@@ -216,3 +234,6 @@ class Github:
         response.raise_for_status()
 
         return response
+
+    def _should_be_excluded(self, name: str, exclusions: list[str]) -> bool:
+        return any(name in exclusion for exclusion in exclusions)

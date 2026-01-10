@@ -82,7 +82,7 @@ jobs:
         id: summary
         run: |
           FILENAME="daily-${{ matrix.token_name }}.md"
-          uv run task cli \
+          uv run task cli -e $SUMMARY_REPOSITORY \
               --file $FILENAME --username ${{ matrix.username }} \
               daily-summary --date "$TARGET_DATE" --escape --no-ollama
 
