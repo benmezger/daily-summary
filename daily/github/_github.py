@@ -77,6 +77,10 @@ class Github:
             if self._should_be_excluded(event.repository.name, excluded_repositories):
                 continue
 
+            repo_owner = pydash.get(item, "repository.owner.login", "")
+            if repo_owner != self.username:
+                event.committed_by_others = True
+
             yield event
 
     def reviews_from(

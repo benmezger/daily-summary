@@ -43,7 +43,6 @@ def maybe_write_github_summaries(
     sections = [
         ("\n_PR/Issue summary_\n", (EventType.ISSUE, EventType.PULL_REQUEST)),
         ("\n_PR/Issue review_\n", (EventType.REVIEW,)),
-        ("\n_Commit summary_\n", (EventType.COMMIT,)),
         ("\n_Tags summary_\n", (EventType.TAG,)),
         ("\n_Comments summary_\n", (EventType.COMMENT,)),
     ]
@@ -52,6 +51,19 @@ def maybe_write_github_summaries(
         summary(
             title=title,
             repository_events=_order_by_org_event_type(repository_events, event_types),
+        )
+
+    for title, committed_by_others in (
+        ("\n_Commit summary_\n", False),
+        ("\n_Committed by others (unverified)_\n", True),
+    ):
+        summary(
+            title=title,
+            repository_events=_order_by_org_event_type(
+                repository_events,
+                (EventType.COMMIT,),
+                committed_by_others=committed_by_others,
+            ),
         )
 
 
@@ -129,10 +141,16 @@ def _maybe_write_summary(
 
 
 def _order_by_org_event_type(
-    repository_events: list[RepositoryEvents], event_types: tuple[EventType, ...]
+    repository_events: list[RepositoryEvents],
+    event_types: tuple[EventType, ...],
+    committed_by_others: bool | None = None,
 ) -> defaultdict[str, defaultdict[str, list[GithubEvent]]]:
     """
     Order and filter repository events by organization and repository.
+
+    Args:
+        committed_by_others: If None, no filtering on this field.
+            If True/False, only include events matching that value.
 
     Returns a nested defaultdict structure:
         {"organization": {"repository": [filtered_events]}}
@@ -140,7 +158,15 @@ def _order_by_org_event_type(
 
     events = defaultdict(lambda: defaultdict(list))
     for evt in repository_events:
-        filtered_events = [e for e in evt.events if e.event_type in event_types]
+        filtered_events = [
+            e
+            for e in evt.events
+            if e.event_type in event_types
+            and (
+                committed_by_others is None
+                or e.committed_by_others == committed_by_others
+            )
+        ]
         if filtered_events:
             events[evt.organization][evt.repository].extend(filtered_events)
 

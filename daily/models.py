@@ -95,6 +95,7 @@ class GithubEvent(BaseModel):
     ] = Field(validation_alias=AliasChoices("repository", "full_name"))
     sha: str | None = None
     event_type: EventType
+    committed_by_others: bool = False
     state: str | None = None
     reviews: list[GithubReview] = Field(
         default_factory=list[GithubReview],

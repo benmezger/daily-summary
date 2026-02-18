@@ -77,3 +77,16 @@ def test_maybe_write_misc_skips_on_empty_events():
     file.seek(0)
 
     assert file.read() == ""
+
+
+def test_maybe_write_github_summaries_with_committed_by_others(
+    repository_events_with_committed_by_others: list[RepositoryEvents],
+    snapshot: SnapshotTest,
+):
+    file = io.StringIO()
+    maybe_write_github_summaries(
+        repository_events_with_committed_by_others, file=file, ollama=None
+    )
+    file.seek(0)
+
+    snapshot.assert_match(file.read())
