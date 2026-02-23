@@ -4,14 +4,15 @@
 # Created at <2025-02-28 Fri 23:17>
 
 
-from collections.abc import Iterable
+import asyncio
+from collections.abc import AsyncIterable, Iterable
 from datetime import datetime
 from typing import Any, Literal, overload
 
 import httpx
 import pydash
 import tenacity
-from httpx import Client
+from httpx import AsyncClient, Client
 
 from daily.models import Account, GithubEvent
 
@@ -21,6 +22,13 @@ from . import _graphql_queries as queries
 class Github:
     def __init__(self, access_token: str, username: str) -> None:
         self._client = Client(
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            }
+        )
+
+        self._aclient = AsyncClient(
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
@@ -60,9 +68,9 @@ class Github:
         retry=tenacity.retry_if_exception_type(httpx.ReadTimeout),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
     )
-    def commits_from(
+    async def commits_from(
         self, created_at: datetime, excluded_repositories: list[str]
-    ) -> Iterable[GithubEvent]:
+    ) -> AsyncIterable[GithubEvent]:
         query = (
             f"author:{self.username}+committer-date:{created_at:%Y-%m-%d}"
             "+sort:committer-date"
@@ -72,13 +80,31 @@ class Github:
             "get", f"https://api.github.com/search/commits?q={query}"
         )
 
+        # Fetch extra information regarding the commits made, so we can check for
+        # verified and non-verified commits.
+        commit_urls = {
+            item["node_id"]: item["url"]
+            for item in pydash.get(response.json(), "items", [])
+        }
+        commits_by_node = dict(
+            zip(
+                list(commit_urls.keys()),
+                await asyncio.gather(
+                    *(self._amake_request("get", url) for url in commit_urls.values())
+                ),
+                strict=True,
+            )
+        )
+
         for item in pydash.get(response.json(), "items", []):
             event = GithubEvent.model_validate(item)
+            raw_commmit = commits_by_node[event.id].json()
+
             if self._should_be_excluded(event.repository.name, excluded_repositories):
                 continue
 
-            repo_owner = pydash.get(item, "repository.owner.login", "")
-            if repo_owner != self.username:
+            is_verified = pydash.get(raw_commmit, "commit.verification.verified", False)
+            if not is_verified:
                 event.committed_by_others = True
 
             yield event
@@ -238,6 +264,36 @@ class Github:
         response.raise_for_status()
 
         return response
+
+    @overload
+    async def _amake_request(
+        self, method: Literal["get"], url: str, json: Literal[None] = None
+    ) -> httpx.Response: ...
+
+    @overload
+    async def _amake_request(
+        self, method: Literal["post"], url: str, json: dict[str, Any]
+    ) -> httpx.Response: ...
+
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(
+            (httpx.ReadTimeout, httpx.HTTPStatusError)
+        ),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=5),
+    )
+    async def _amake_request(
+        self,
+        method: Literal["post", "get"],
+        url: str,
+        json: dict[str, Any] | None = None,
+    ) -> httpx.Response:
+        kwargs = {}
+        if method == "post":
+            kwargs["json"] = json
+
+        return (
+            await getattr(self._aclient, method)(url=url, **kwargs)
+        ).raise_for_status()
 
     def _should_be_excluded(self, name: str, exclusions: list[str]) -> bool:
         return any(name in exclusion for exclusion in exclusions)

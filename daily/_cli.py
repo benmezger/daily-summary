@@ -4,6 +4,7 @@
 # Created at <2025-03-01 Sat 20:36>
 
 
+import asyncio
 import sys
 from collections import defaultdict
 from collections.abc import Callable
@@ -39,6 +40,14 @@ def date_option(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         return f(*args, **kwargs)
+
+    return wrapper
+
+
+def coro(f: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return asyncio.run(f(*args, **kwargs))
 
     return wrapper
 
@@ -116,16 +125,17 @@ def list_issues(ctx: click.Context, date: datetime) -> None:
 @cli.command()
 @date_option
 @click.pass_context
-def list_commits(ctx: click.Context, date: datetime) -> None:
+@coro
+async def list_commits(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
-    context.file.writelines(
-        [
-            f"{event}\n"
-            for event in context.github.commits_from(
-                date, context.excluded_repositories
-            )
-        ]
-    )
+    events = [
+        f"{event}\n"
+        async for event in context.github.commits_from(
+            date, context.excluded_repositories
+        )
+    ]
+
+    context.file.writelines(events)
 
 
 @cli.command()
@@ -165,6 +175,7 @@ def list_comments(ctx: click.Context, date: datetime) -> None:
 
 
 @cli.command()
+@coro
 @date_option
 @click.option(
     "--ollama-model",
@@ -201,7 +212,7 @@ def list_comments(ctx: click.Context, date: datetime) -> None:
     help="Use custom Ollama URL.",
 )
 @click.pass_context
-def daily_summary(
+async def daily_summary(
     ctx: click.Context,
     date: datetime,
     ollama_model: str,
@@ -218,7 +229,12 @@ def daily_summary(
 
     for event in chain(
         context.github.issues_from(filter_date, context.excluded_repositories),
-        context.github.commits_from(filter_date, context.excluded_repositories),
+        [
+            event
+            async for event in context.github.commits_from(
+                filter_date, context.excluded_repositories
+            )
+        ],
         context.github.reviews_from(filter_date, context.excluded_repositories),
         context.github.tags_from(filter_date, context.excluded_repositories),
         context.github.comments_from(filter_date, context.excluded_repositories),
