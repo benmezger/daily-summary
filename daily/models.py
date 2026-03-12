@@ -8,6 +8,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Self, Union
 
+import pydash
 from pydantic import (
     AliasChoices,
     AliasPath,
@@ -136,7 +137,7 @@ class Summary(BaseModel):
     @classmethod
     def from_event(cls: type[Self], event: GithubEvent) -> Self:
         return cls(
-            title=event.title.strip().splitlines()[0],
+            title=pydash.get(event.title.strip().splitlines(), "0", ""),
             repository_url=event.repository.repository_url,
             event_url=event.url.strip(),
             event_type=event.event_type,
