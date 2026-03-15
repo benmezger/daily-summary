@@ -73,7 +73,15 @@ jobs:
         run: |
           echo "CURRENT_YEAR=$(date -d "$TARGET_DATE" '+%Y')" >> $GITHUB_ENV
 
+      - name: Cache GH extensions
+        id: cache-gh-extensions
+        uses: actions/cache@v5
+        with:
+          path: ~/.local/share/gh/extensions
+          key: gh-extensions-${{ runner.os }}
+
       - name: Install GH milestones extension
+        if: steps.cache-gh-extensions.outputs.cache-hit != 'true'
         run: gh extension install valeriobelli/gh-milestone
         env:
           GH_TOKEN: ${{ secrets[matrix.token_name] }}
