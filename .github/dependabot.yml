@@ -7,7 +7,7 @@ updates:
       - "ci/cd"
       - "dependencies"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     reviewers:
       - "benmezger"
     assignees:
@@ -19,7 +19,7 @@ updates:
       - "dependencies"
       - "python"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     reviewers:
       - "benmezger"
     assignees:
