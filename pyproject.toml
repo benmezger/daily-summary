@@ -16,7 +16,7 @@ dependencies = [
 dev = [
     "pyright>=1.1.409",
     "pytest>=9.0.3",
-    "ruff>=0.15.11",
+    "ruff>=0.15.12",
     "snapshottest>=0.6.0",
     "taskipy>=1.14.1",
 ]
