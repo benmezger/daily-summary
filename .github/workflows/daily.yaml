@@ -22,10 +22,6 @@ jobs:
             display_name: Personal
             extra_label: "personal"
             username: "benmezger"
-          - token_name: GH_ENTERPRISE_TOKEN
-            display_name: Work
-            extra_label: "work"
-            username: "benjaminm_backbase"
     concurrency:
       group: daily-${{ matrix.token_name }}
       cancel-in-progress: true
