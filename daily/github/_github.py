@@ -7,6 +7,7 @@
 import asyncio
 from collections.abc import AsyncIterable, Iterable
 from datetime import datetime
+from http import HTTPStatus
 from typing import Any, Literal, overload
 
 import httpx
@@ -14,6 +15,7 @@ import pydash
 import tenacity
 from httpx import AsyncClient, Client
 
+from daily.exceptions import DailySummaryUnauthorizedError
 from daily.models import Account, GithubEvent
 
 from . import _graphql_queries as queries
@@ -261,9 +263,11 @@ class Github:
             kwargs["json"] = json
 
         response: httpx.Response = getattr(self._client, method)(url=url, **kwargs)
-        response.raise_for_status()
 
-        return response
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            raise DailySummaryUnauthorizedError
+
+        return response.raise_for_status()
 
     @overload
     async def _amake_request(
@@ -291,9 +295,14 @@ class Github:
         if method == "post":
             kwargs["json"] = json
 
-        return (
-            await getattr(self._aclient, method)(url=url, **kwargs)
-        ).raise_for_status()
+        response: httpx.Response = await getattr(self._aclient, method)(
+            url=url, **kwargs
+        )
+
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            raise DailySummaryUnauthorizedError
+
+        return response.raise_for_status()
 
     def _should_be_excluded(self, name: str, exclusions: list[str]) -> bool:
         return any(name in exclusion for exclusion in exclusions)
