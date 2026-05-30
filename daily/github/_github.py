@@ -40,10 +40,6 @@ class Github:
         self.username = username
         self._account: Account | None = None
 
-    @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(httpx.ReadTimeout),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
-    )
     def get_user(self) -> Account:
         if self._account:
             return self._account
@@ -66,10 +62,6 @@ class Github:
 
             yield event
 
-    @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(httpx.ReadTimeout),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
-    )
     async def commits_from(
         self, created_at: datetime, excluded_repositories: list[str]
     ) -> AsyncIterable[GithubEvent]:
