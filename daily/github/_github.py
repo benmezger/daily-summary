@@ -254,7 +254,9 @@ class Github:
         if method == "post":
             kwargs["json"] = json
 
-        response: httpx.Response = getattr(self._client, method)(url=url, **kwargs)
+        response: httpx.Response = getattr(self._client, method)(
+            url=url, timeout=60, **kwargs
+        )
 
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             raise DailySummaryUnauthorizedError
@@ -288,7 +290,7 @@ class Github:
             kwargs["json"] = json
 
         response: httpx.Response = await getattr(self._aclient, method)(
-            url=url, **kwargs
+            url=url, timeout=60, **kwargs
         )
 
         if response.status_code == HTTPStatus.UNAUTHORIZED:
