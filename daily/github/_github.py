@@ -48,7 +48,10 @@ class Github:
         return Account.model_validate(response.json())
 
     def issues_from(
-        self, created_at: datetime, excluded_repositories: list[str]
+        self,
+        created_at: datetime,
+        excluded_repositories: list[str],
+        excluded_organizations: list[str],
     ) -> Iterable[GithubEvent]:
         for event in self._make_graphql_request(
             queries.issues.format(
@@ -57,13 +60,18 @@ class Github:
             ),
             path="data.search.edges",
         ):
-            if self._should_be_excluded(event.repository.name, excluded_repositories):
+            if self._should_be_excluded(
+                event.repository.name, excluded_repositories, excluded_organizations
+            ):
                 continue
 
             yield event
 
     async def commits_from(
-        self, created_at: datetime, excluded_repositories: list[str]
+        self,
+        created_at: datetime,
+        excluded_repositories: list[str],
+        excluded_organizations: list[str],
     ) -> AsyncIterable[GithubEvent]:
         query = (
             f"author:{self.username}+committer-date:{created_at:%Y-%m-%d}"
@@ -94,7 +102,9 @@ class Github:
             event = GithubEvent.model_validate(item)
             raw_commmit = commits_by_node[event.id].json()
 
-            if self._should_be_excluded(event.repository.name, excluded_repositories):
+            if self._should_be_excluded(
+                str(event.repository), excluded_repositories, excluded_organizations
+            ):
                 continue
 
             is_verified = pydash.get(raw_commmit, "commit.verification.verified", False)
@@ -104,7 +114,10 @@ class Github:
             yield event
 
     def reviews_from(
-        self, updated_at: datetime, excluded_repositories: list[str]
+        self,
+        updated_at: datetime,
+        excluded_repositories: list[str],
+        excluded_organizations: list[str],
     ) -> Iterable[GithubEvent]:
         for event in self._make_graphql_request(
             queries.reviews.format(
@@ -113,7 +126,9 @@ class Github:
             ),
             path="data.search.edges",
         ):
-            if self._should_be_excluded(event.repository.name, excluded_repositories):
+            if self._should_be_excluded(
+                str(event.repository), excluded_repositories, excluded_organizations
+            ):
                 continue
 
             for review in event.reviews:
@@ -126,7 +141,10 @@ class Github:
                 break
 
     def tags_from(
-        self, created_at: datetime, excluded_repositories: list[str]
+        self,
+        created_at: datetime,
+        excluded_repositories: list[str],
+        excluded_organizations: list[str],
     ) -> Iterable[GithubEvent]:
         response = self._make_request(
             "post",
@@ -140,7 +158,9 @@ class Github:
         for repo in repositories:
             repo_name = repo.get("nameWithOwner")
 
-            if self._should_be_excluded(repo_name, excluded_repositories):
+            if self._should_be_excluded(
+                repo_name, excluded_repositories, excluded_organizations
+            ):
                 continue
 
             for ref in pydash.get(repo, "refs.nodes", []):
@@ -172,7 +192,10 @@ class Github:
                 )
 
     def comments_from(
-        self, created_at: datetime, excluded_repositories: list[str]
+        self,
+        created_at: datetime,
+        excluded_repositories: list[str],
+        excluded_organizations: list[str],
     ) -> Iterable[GithubEvent]:
         response = self._make_request(
             "post",
@@ -199,7 +222,10 @@ class Github:
                     continue
 
                 repository_name = pydash.get(node, "repository.nameWithOwner")
-                if self._should_be_excluded(repository_name, excluded_repositories):
+                breakpoint()
+                if self._should_be_excluded(
+                    repository_name, excluded_repositories, excluded_organizations
+                ):
                     continue
 
                 yield GithubEvent.model_validate(
@@ -298,5 +324,12 @@ class Github:
 
         return response.raise_for_status()
 
-    def _should_be_excluded(self, name: str, exclusions: list[str]) -> bool:
-        return any(name in exclusion for exclusion in exclusions)
+    def _should_be_excluded(
+        self, name: str, exclusions: list[str], excluded_organizations: list[str]
+    ) -> bool:
+        return any(
+            (
+                any(organization in name for organization in excluded_organizations),
+                any(name in exclusion for exclusion in exclusions),
+            ),
+        )

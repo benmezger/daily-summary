@@ -22,10 +22,12 @@ jobs:
             display_name: Personal
             extra_label: "personal"
             username: "benmezger"
+            cli_args: ""
           - token_name: GH_ENTERPRISE_TOKEN
             display_name: Work
             extra_label: "work"
             username: "benmezger"
+            cli_args: "-o benmezger"
     concurrency:
       group: daily-${{ matrix.token_name }}
       cancel-in-progress: true
@@ -97,7 +99,7 @@ jobs:
         id: summary
         run: |
           FILENAME="daily-${{ matrix.token_name }}.md"
-          uv run task cli -e $SUMMARY_REPOSITORY \
+          uv run task cli -e $SUMMARY_REPOSITORY ${{ matrix.cli_args }} \
               --file $FILENAME --username ${{ matrix.username }} \
               daily-summary --date "$TARGET_DATE" --escape --no-ollama
 

@@ -26,6 +26,7 @@ class _Context(NamedTuple):
     github: Github
     file: TextIO
     excluded_repositories: list[str]
+    excluded_organizations: list[str]
 
 
 def date_option(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -94,6 +95,12 @@ def validate_repository_names(
     multiple=True,
     callback=validate_repository_names,
 )
+@click.option(
+    "-o",
+    "--exclude-organizations",
+    help="Exclude organizations from the generated summary. Expects 'organization'",
+    multiple=True,
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -101,11 +108,13 @@ def cli(
     username: str,
     file: TextIO,
     exclude_repositories: tuple[str],
+    exclude_organizations: tuple[str],
 ) -> None:
     ctx.obj = _Context(
         github=Github(token, username=username),
         file=file,
         excluded_repositories=list(exclude_repositories),
+        excluded_organizations=list(exclude_organizations),
     )
 
 
@@ -117,7 +126,9 @@ def list_issues(ctx: click.Context, date: datetime) -> None:
     context.file.writelines(
         [
             f"{event}\n"
-            for event in context.github.issues_from(date, context.excluded_repositories)
+            for event in context.github.issues_from(
+                date, context.excluded_repositories, context.excluded_organizations
+            )
         ]
     )
 
@@ -131,7 +142,7 @@ async def list_commits(ctx: click.Context, date: datetime) -> None:
     events = [
         f"{event}\n"
         async for event in context.github.commits_from(
-            date, context.excluded_repositories
+            date, context.excluded_repositories, context.excluded_organizations
         )
     ]
 
@@ -154,7 +165,9 @@ def list_tags(ctx: click.Context, date: datetime) -> None:
     context.file.writelines(
         [
             f"{event}\n"
-            for event in context.github.tags_from(date, context.excluded_repositories)
+            for event in context.github.tags_from(
+                date, context.excluded_repositories, context.excluded_organizations
+            )
         ]
     )
 
@@ -168,7 +181,7 @@ def list_comments(ctx: click.Context, date: datetime) -> None:
         [
             f"{event}\n"
             for event in context.github.comments_from(
-                date, context.excluded_repositories
+                date, context.excluded_repositories, context.excluded_organizations
             )
         ]
     )
@@ -228,16 +241,26 @@ async def daily_summary(
     filter_date = (datetime.now() - timedelta(days=1)) if yesterday else date
 
     for event in chain(
-        context.github.issues_from(filter_date, context.excluded_repositories),
+        context.github.issues_from(
+            filter_date, context.excluded_repositories, context.excluded_organizations
+        ),
         [
             event
             async for event in context.github.commits_from(
-                filter_date, context.excluded_repositories
+                filter_date,
+                context.excluded_repositories,
+                context.excluded_organizations,
             )
         ],
-        context.github.reviews_from(filter_date, context.excluded_repositories),
-        context.github.tags_from(filter_date, context.excluded_repositories),
-        context.github.comments_from(filter_date, context.excluded_repositories),
+        context.github.reviews_from(
+            filter_date, context.excluded_repositories, context.excluded_organizations
+        ),
+        context.github.tags_from(
+            filter_date, context.excluded_repositories, context.excluded_organizations
+        ),
+        context.github.comments_from(
+            filter_date, context.excluded_repositories, context.excluded_organizations
+        ),
     ):
         repository_events[str(event.repository)].append(event)
 
