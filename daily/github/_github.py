@@ -222,7 +222,6 @@ class Github:
                     continue
 
                 repository_name = pydash.get(node, "repository.nameWithOwner")
-                breakpoint()
                 if self._should_be_excluded(
                     repository_name, excluded_repositories, excluded_organizations
                 ):
