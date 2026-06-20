@@ -36,7 +36,7 @@ jobs:
       SUMMARY_ASSIGNEE: "benmezger"
       TIMEZONE: "Europe/Amsterdam"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Python installation
         id: cache-python
