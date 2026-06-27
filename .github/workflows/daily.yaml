@@ -40,7 +40,7 @@ jobs:
 
       - name: Cache Python installation
         id: cache-python
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: /opt/hostedtoolcache/Python/3.11.11
           key: python-3.11.11-${{ runner.os }}
@@ -58,7 +58,7 @@ jobs:
 
       - name: Cache virtual environment
         id: cache-venv
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
@@ -84,7 +84,7 @@ jobs:
 
       - name: Cache GH extensions
         id: cache-gh-extensions
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.local/share/gh/extensions
           key: gh-extensions-${{ runner.os }}
