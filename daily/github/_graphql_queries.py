@@ -8,7 +8,12 @@ from typing import Final
 
 issues: Final[str] = """
 {{
-  search(query: "author:{username} created:{created_at}", type: ISSUE, first: 100) {{
+  search(
+    query: "author:{username} created:{created_at} is:issue"
+    type: ISSUE
+    first: 100
+    after: {after}
+  ) {{
     edges {{
       node {{
         ... on Issue {{
@@ -37,6 +42,43 @@ issues: Final[str] = """
           mergedAt
         }}
       }}
+    }}
+    pageInfo {{
+      hasNextPage
+      endCursor
+    }}
+  }}
+}}
+"""
+
+pull_requests: Final[str] = """
+{{
+  search(
+    query: "author:{username} updated:{updated_after}..{updated_before} is:pr"
+    type: ISSUE
+    first: 100
+    after: {after}
+  ) {{
+    edges {{
+      node {{
+        ... on PullRequest {{
+          id
+          title
+          body
+          url
+          repository {{
+            nameWithOwner
+          }}
+          createdAt
+          updatedAt
+          state
+          mergedAt
+        }}
+      }}
+    }}
+    pageInfo {{
+      hasNextPage
+      endCursor
     }}
   }}
 }}

@@ -5,7 +5,7 @@
 
 
 import asyncio
-from collections.abc import AsyncIterable, Iterable
+from collections.abc import AsyncIterable, Callable, Iterable
 from datetime import datetime
 from http import HTTPStatus
 from typing import Any, Literal, overload
@@ -53,19 +53,47 @@ class Github:
         excluded_repositories: list[str],
         excluded_organizations: list[str],
     ) -> Iterable[GithubEvent]:
-        for event in self._make_graphql_request(
-            queries.issues.format(
+        event_ids = set[str]()
+        graphql_queries = (
+            lambda after: queries.issues.format(
                 username=self.username,
                 created_at=f"{created_at:%Y-%m-%d}",
+                after=after,
             ),
-            path="data.search.edges",
-        ):
-            if self._should_be_excluded(
-                event.repository.name, excluded_repositories, excluded_organizations
-            ):
-                continue
+            lambda after: queries.pull_requests.format(
+                username=self.username,
+                updated_after=created_at.replace(
+                    hour=0,
+                    minute=0,
+                    second=0,
+                    microsecond=0,
+                ).isoformat(timespec="seconds"),
+                updated_before=created_at.replace(
+                    hour=23,
+                    minute=59,
+                    second=59,
+                    microsecond=0,
+                ).isoformat(timespec="seconds"),
+                after=after,
+            ),
+        )
 
-            yield event
+        for query_factory in graphql_queries:
+            for event in self._make_paginated_graphql_request(
+                query_factory,
+                path="data.search",
+            ):
+                if event.id in event_ids:
+                    continue
+                if self._should_be_excluded(
+                    event.repository.name,
+                    excluded_repositories,
+                    excluded_organizations,
+                ):
+                    continue
+
+                event_ids.add(event.id)
+                yield event
 
     async def commits_from(
         self,
@@ -246,10 +274,41 @@ class Github:
             "post", "https://api.github.com/graphql", json={"query": query}
         )
 
-        results = list[GithubEvent]()
+        results: list[GithubEvent] = []
         for edge in pydash.get(response.json(), path, []):
             if node := pydash.get(edge, "node", None):
                 results.append(GithubEvent.model_validate(node))
+
+        return results
+
+    def _make_paginated_graphql_request(
+        self,
+        query_factory: Callable[[str], str],
+        path: str,
+    ) -> list[GithubEvent]:
+        response_path = path
+        cursor = "null"
+        results: list[GithubEvent] = []
+
+        while True:
+            response = self._make_request(
+                "post",
+                "https://api.github.com/graphql",
+                json={"query": query_factory(cursor)},
+            )
+            data = pydash.get(response.json(), response_path, {})
+
+            for edge in pydash.get(data, "edges", []):
+                if node := pydash.get(edge, "node", None):
+                    results.append(GithubEvent.model_validate(node))
+
+            if not pydash.get(data, "pageInfo.hasNextPage", False):
+                break
+
+            if not (next_cursor := pydash.get(data, "pageInfo.endCursor", None)):
+                break
+
+            cursor = f'"{next_cursor}"'
 
         return results
 
