@@ -93,7 +93,7 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
             """
 {
   search(
-    query: "author:benmezger updated:2026-09-11 is:pr"
+    query: "author:benmezger updated:2026-09-11..2026-09-11 is:pr"
     type: ISSUE
     first: 100
   ) {
