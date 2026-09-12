@@ -9,7 +9,11 @@ from daily.models import EventType, GithubEvent, Repository
 
 
 def test_make_paginated_graphql_request_fetches_all_pages(monkeypatch):
-    github = Github("token", username="benmezger")
+    class TestGithub(Github):
+        def make_paginated_graphql_request(self, query_factory, path: str):
+            return self._make_paginated_graphql_request(query_factory, path)
+
+    github = TestGithub("token", username="benmezger")
     queries: list[str] = []
     responses = iter(
         (
@@ -66,12 +70,13 @@ def test_make_paginated_graphql_request_fetches_all_pages(monkeypatch):
             return self._payload
 
     def fake_make_request(self, method: str, url: str, json: dict | None = None):
+        assert json is not None
         queries.append(json["query"])
         return FakeResponse(next(responses))
 
     monkeypatch.setattr(Github, "_make_request", fake_make_request)
 
-    result = github._make_paginated_graphql_request(
+    result = github.make_paginated_graphql_request(
         lambda after: (
             "{ search(query: \"author:benmezger is:issue\", type: ISSUE, "
             f"first: 100, after: {after}) "
@@ -99,7 +104,7 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
         title="Add missing PR summary",
         url="https://github.com/benmezger/daily-summary/pull/123",
         created_at=datetime(2026, 9, 11, 8, 0, 0),
-        updated_at=datetime(2026, 9, 11, 12, 0, 0),
+        updatedAt=datetime(2026, 9, 11, 12, 0, 0),
         repository=Repository(owner="benmezger", name="daily-summary"),
         event_type=EventType.PULL_REQUEST,
         state="MERGED",
