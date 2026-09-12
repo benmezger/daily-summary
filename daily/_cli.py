@@ -7,7 +7,7 @@
 import asyncio
 import sys
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
 from datetime import datetime, timedelta
 from functools import wraps
 from itertools import chain
@@ -121,12 +121,13 @@ def cli(
 @cli.command()
 @date_option
 @click.pass_context
-def list_issues(ctx: click.Context, date: datetime) -> None:
+@coro
+async def list_issues(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
         [
             f"{event}\n"
-            for event in context.github.issues_from(
+            async for event in context.github.issues_from(
                 date, context.excluded_repositories, context.excluded_organizations
             )
         ]
@@ -151,21 +152,23 @@ async def list_commits(ctx: click.Context, date: datetime) -> None:
 
 @cli.command()
 @click.pass_context
-def account(ctx: click.Context) -> None:
+@coro
+async def account(ctx: click.Context) -> None:
     context: _Context = ctx.obj
-    acc = context.github.get_user()
+    acc = await context.github.get_user()
     context.file.write(f"{acc}\n")
 
 
 @cli.command()
 @date_option
 @click.pass_context
-def list_tags(ctx: click.Context, date: datetime) -> None:
+@coro
+async def list_tags(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
         [
             f"{event}\n"
-            for event in context.github.tags_from(
+            async for event in context.github.tags_from(
                 date, context.excluded_repositories, context.excluded_organizations
             )
         ]
@@ -175,12 +178,13 @@ def list_tags(ctx: click.Context, date: datetime) -> None:
 @cli.command()
 @date_option
 @click.pass_context
-def list_comments(ctx: click.Context, date: datetime) -> None:
+@coro
+async def list_comments(ctx: click.Context, date: datetime) -> None:
     context: _Context = ctx.obj
     context.file.writelines(
         [
             f"{event}\n"
-            for event in context.github.comments_from(
+            async for event in context.github.comments_from(
                 date, context.excluded_repositories, context.excluded_organizations
             )
         ]
@@ -240,28 +244,26 @@ async def daily_summary(
 
     filter_date = (datetime.now() - timedelta(days=1)) if yesterday else date
 
-    for event in chain(
-        context.github.issues_from(
-            filter_date, context.excluded_repositories, context.excluded_organizations
-        ),
-        [
-            event
-            async for event in context.github.commits_from(
-                filter_date,
-                context.excluded_repositories,
-                context.excluded_organizations,
+    event_lists = await asyncio.gather(
+        *(
+            _collect(
+                method(
+                    filter_date,
+                    context.excluded_repositories,
+                    context.excluded_organizations,
+                )
             )
-        ],
-        context.github.reviews_from(
-            filter_date, context.excluded_repositories, context.excluded_organizations
-        ),
-        context.github.tags_from(
-            filter_date, context.excluded_repositories, context.excluded_organizations
-        ),
-        context.github.comments_from(
-            filter_date, context.excluded_repositories, context.excluded_organizations
-        ),
-    ):
+            for method in (
+                context.github.issues_from,
+                context.github.commits_from,
+                context.github.reviews_from,
+                context.github.tags_from,
+                context.github.comments_from,
+            )
+        )
+    )
+
+    for event in chain(*event_lists):
         repository_events[str(event.repository)].append(event)
 
     events = [
@@ -274,8 +276,12 @@ async def daily_summary(
     ]
 
     ollama_handler = Ollama(host=ollama_url, model=ollama_model) if ollama else None
-    account = context.github.get_user()
+    account = await context.github.get_user()
 
     maybe_write_header(account, events, context.file, filter_date, escape)
     maybe_write_github_summaries(events, ollama_handler, context.file, escape)
     maybe_write_misc(events, context.file)
+
+
+async def _collect(events: AsyncIterable[GithubEvent]) -> list[GithubEvent]:
+    return [event async for event in events]

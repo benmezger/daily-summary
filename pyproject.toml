@@ -16,10 +16,14 @@ dependencies = [
 dev = [
     "pyright>=1.1.411",
     "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
     "ruff>=0.16.6",
     "snapshottest>=0.6.0",
     "taskipy>=1.14.1",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
 
 [tool.taskipy.tasks]
 lint = "ruff check ."

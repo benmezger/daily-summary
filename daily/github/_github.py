@@ -5,7 +5,7 @@
 
 
 import asyncio
-from collections.abc import AsyncIterable, Callable, Iterable
+from collections.abc import AsyncIterable, Callable
 from datetime import datetime
 from http import HTTPStatus
 from typing import Any, Literal, overload
@@ -13,7 +13,7 @@ from typing import Any, Literal, overload
 import httpx
 import pydash
 import tenacity
-from httpx import AsyncClient, Client
+from httpx import AsyncClient
 
 from daily.exceptions import DailySummaryUnauthorizedError
 from daily.models import Account, GithubEvent
@@ -23,13 +23,6 @@ from . import _graphql_queries as queries
 
 class Github:
     def __init__(self, access_token: str, username: str) -> None:
-        self._client = Client(
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            }
-        )
-
         self._aclient = AsyncClient(
             headers={
                 "Authorization": f"Bearer {access_token}",
@@ -40,21 +33,21 @@ class Github:
         self.username = username
         self._account: Account | None = None
 
-    def get_user(self) -> Account:
+    async def get_user(self) -> Account:
         if self._account:
             return self._account
 
-        response = self._make_request("get", "https://api.github.com/user")
+        response = await self._amake_request("get", "https://api.github.com/user")
         return Account.model_validate(response.json())
 
-    def issues_from(
+    async def issues_from(
         self,
         created_at: datetime,
         excluded_repositories: list[str],
         excluded_organizations: list[str],
-    ) -> Iterable[GithubEvent]:
+    ) -> AsyncIterable[GithubEvent]:
         event_ids = set[str]()
-        graphql_queries = (
+        graphql_queries: tuple[Callable[[str], str], ...] = (
             lambda after: queries.issues.format(
                 username=self.username,
                 created_at=f"{created_at:%Y-%m-%d}",
@@ -79,7 +72,7 @@ class Github:
         )
 
         for query_factory in graphql_queries:
-            for event in self._make_paginated_graphql_request(
+            for event in await self._make_paginated_graphql_request(
                 query_factory,
                 path="data.search",
             ):
@@ -106,7 +99,7 @@ class Github:
             "+sort:committer-date"
         )
 
-        response = self._make_request(
+        response = await self._amake_request(
             "get", f"https://api.github.com/search/commits?q={query}"
         )
 
@@ -141,13 +134,13 @@ class Github:
 
             yield event
 
-    def reviews_from(
+    async def reviews_from(
         self,
         updated_at: datetime,
         excluded_repositories: list[str],
         excluded_organizations: list[str],
-    ) -> Iterable[GithubEvent]:
-        for event in self._make_graphql_request(
+    ) -> AsyncIterable[GithubEvent]:
+        for event in await self._make_graphql_request(
             queries.reviews.format(
                 username=self.username,
                 updated_at=f"{updated_at:%Y-%m-%d}",
@@ -168,13 +161,13 @@ class Github:
                 yield event
                 break
 
-    def tags_from(
+    async def tags_from(
         self,
         created_at: datetime,
         excluded_repositories: list[str],
         excluded_organizations: list[str],
-    ) -> Iterable[GithubEvent]:
-        response = self._make_request(
+    ) -> AsyncIterable[GithubEvent]:
+        response = await self._amake_request(
             "post",
             "https://api.github.com/graphql",
             json={"query": queries.tags.format()},
@@ -219,13 +212,13 @@ class Github:
                     }
                 )
 
-    def comments_from(
+    async def comments_from(
         self,
         created_at: datetime,
         excluded_repositories: list[str],
         excluded_organizations: list[str],
-    ) -> Iterable[GithubEvent]:
-        response = self._make_request(
+    ) -> AsyncIterable[GithubEvent]:
+        response = await self._amake_request(
             "post",
             "https://api.github.com/graphql",
             json={
@@ -269,8 +262,8 @@ class Github:
                     }
                 )
 
-    def _make_graphql_request(self, query: str, path: str) -> list[GithubEvent]:
-        response = self._make_request(
+    async def _make_graphql_request(self, query: str, path: str) -> list[GithubEvent]:
+        response = await self._amake_request(
             "post", "https://api.github.com/graphql", json={"query": query}
         )
 
@@ -281,7 +274,7 @@ class Github:
 
         return results
 
-    def _make_paginated_graphql_request(
+    async def _make_paginated_graphql_request(
         self,
         query_factory: Callable[[str], str],
         path: str,
@@ -291,7 +284,7 @@ class Github:
         results: list[GithubEvent] = []
 
         while True:
-            response = self._make_request(
+            response = await self._amake_request(
                 "post",
                 "https://api.github.com/graphql",
                 json={"query": query_factory(cursor)},
@@ -311,41 +304,6 @@ class Github:
             cursor = f'"{next_cursor}"'
 
         return results
-
-    @overload
-    def _make_request(
-        self, method: Literal["get"], url: str, json: Literal[None] = None
-    ) -> httpx.Response: ...
-
-    @overload
-    def _make_request(
-        self, method: Literal["post"], url: str, json: dict[str, Any]
-    ) -> httpx.Response: ...
-
-    @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(
-            (httpx.ReadTimeout, httpx.HTTPStatusError)
-        ),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=5),
-    )
-    def _make_request(
-        self,
-        method: Literal["post", "get"],
-        url: str,
-        json: dict[str, Any] | None = None,
-    ) -> httpx.Response:
-        kwargs = {}
-        if method == "post":
-            kwargs["json"] = json
-
-        response: httpx.Response = getattr(self._client, method)(
-            url=url, timeout=60, **kwargs
-        )
-
-        if response.status_code == HTTPStatus.UNAUTHORIZED:
-            raise DailySummaryUnauthorizedError
-
-        return response.raise_for_status()
 
     @overload
     async def _amake_request(
