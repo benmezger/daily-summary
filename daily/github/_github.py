@@ -5,7 +5,7 @@
 
 
 import asyncio
-from collections.abc import AsyncIterable, Iterable
+from collections.abc import AsyncIterable, Callable, Iterable
 from datetime import datetime
 from http import HTTPStatus
 from typing import Any, Literal, overload
@@ -283,7 +283,7 @@ class Github:
 
     def _make_paginated_graphql_request(
         self,
-        query_factory: Any,
+        query_factory: Callable[[str], str],
         path: str,
     ) -> list[GithubEvent]:
         response_path = path
