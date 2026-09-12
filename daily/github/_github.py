@@ -53,39 +53,31 @@ class Github:
         excluded_repositories: list[str],
         excluded_organizations: list[str],
     ) -> Iterable[GithubEvent]:
-        for event in self._make_graphql_request(
+        event_ids = set[str]()
+        graphql_queries = (
             queries.issues.format(
                 username=self.username,
                 created_at=f"{created_at:%Y-%m-%d}",
             ),
-            path="data.search.edges",
-        ):
-            if self._should_be_excluded(
-                event.repository.name, excluded_repositories, excluded_organizations
-            ):
-                continue
-
-            yield event
-
-    def pull_requests_from(
-        self,
-        updated_at: datetime,
-        excluded_repositories: list[str],
-        excluded_organizations: list[str],
-    ) -> Iterable[GithubEvent]:
-        for event in self._make_graphql_request(
             queries.pull_requests.format(
                 username=self.username,
-                updated_at=f"{updated_at:%Y-%m-%d}",
+                updated_at=f"{created_at:%Y-%m-%d}",
             ),
-            path="data.search.edges",
-        ):
-            if self._should_be_excluded(
-                str(event.repository), excluded_repositories, excluded_organizations
-            ):
-                continue
+        )
 
-            yield event
+        for query in graphql_queries:
+            for event in self._make_graphql_request(query, path="data.search.edges"):
+                if event.id in event_ids:
+                    continue
+                if self._should_be_excluded(
+                    event.repository.name,
+                    excluded_repositories,
+                    excluded_organizations,
+                ):
+                    continue
+
+                event_ids.add(event.id)
+                yield event
 
     async def commits_from(
         self,

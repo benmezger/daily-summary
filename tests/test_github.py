@@ -12,7 +12,7 @@ from daily.github import Github
 from daily.models import Account, EventType, GithubEvent, Repository
 
 
-def test_pull_requests_from_uses_updated_date_query(monkeypatch):
+def test_issues_from_includes_updated_pull_requests(monkeypatch):
     github = Github("token", username="benmezger")
     pull_request = GithubEvent(
         id="pr-123",
@@ -24,20 +24,73 @@ def test_pull_requests_from_uses_updated_date_query(monkeypatch):
         event_type=EventType.PULL_REQUEST,
         state="MERGED",
     )
-    query: dict[str, str] = {}
+    issue = GithubEvent(
+        id="issue-123",
+        title="Track daily summary regression",
+        url="https://github.com/benmezger/daily-summary/issues/123",
+        created_at=datetime(2026, 9, 11, 7, 0, 0),
+        repository=Repository(owner="benmezger", name="daily-summary"),
+        event_type=EventType.ISSUE,
+        state="OPEN",
+    )
+    queries: list[tuple[str, str]] = []
 
     def fake_make_graphql_request(self, graphql_query: str, path: str):
-        query["graphql_query"] = graphql_query
-        query["path"] = path
+        queries.append((graphql_query, path))
+        if "is:issue" in graphql_query:
+            return [issue, pull_request]
         return [pull_request]
 
     monkeypatch.setattr(Github, "_make_graphql_request", fake_make_graphql_request)
 
-    result = list(github.pull_requests_from(datetime(2026, 9, 11), [], []))
+    result = list(github.issues_from(datetime(2026, 9, 11), [], []))
 
-    assert result == [pull_request]
-    assert query == {
-        "graphql_query": """
+    assert result == [issue, pull_request]
+    assert queries == [
+        (
+            """
+{
+  search(
+    query: "author:benmezger created:2026-09-11 is:issue"
+    type: ISSUE
+    first: 100
+  ) {
+    edges {
+      node {
+        ... on Issue {
+          id
+          title
+          body
+          url
+          repository {
+            nameWithOwner
+          }
+          createdAt
+          updatedAt
+          state
+        }
+        ... on PullRequest {
+          id
+          title
+          body
+          url
+          repository {
+            nameWithOwner
+          }
+          createdAt
+          updatedAt
+          state
+          mergedAt
+        }
+      }
+    }
+  }
+}
+""",
+            "data.search.edges",
+        ),
+        (
+            """
 {
   search(
     query: "author:benmezger updated:2026-09-11 is:pr"
@@ -64,8 +117,9 @@ def test_pull_requests_from_uses_updated_date_query(monkeypatch):
   }
 }
 """,
-        "path": "data.search.edges",
-    }
+            "data.search.edges",
+        ),
+    ]
 
 
 def test_daily_summary_includes_authored_pull_requests(monkeypatch):
@@ -90,14 +144,6 @@ def test_daily_summary_includes_authored_pull_requests(monkeypatch):
         def issues_from(
             self,
             created_at: datetime,
-            excluded_repositories: list[str],
-            excluded_organizations: list[str],
-        ) -> Iterator[GithubEvent]:
-            return iter(())
-
-        def pull_requests_from(
-            self,
-            updated_at: datetime,
             excluded_repositories: list[str],
             excluded_organizations: list[str],
         ) -> Iterator[GithubEvent]:
@@ -135,9 +181,8 @@ def test_daily_summary_includes_authored_pull_requests(monkeypatch):
             excluded_organizations: list[str],
         ) -> Iterator[GithubEvent]:
             return iter(())
+
     monkeypatch.setattr("daily._cli.Github", FakeGithub)
-    monkeypatch.setattr("daily._cli.Github", FakeGithub)
-    runner = CliRunner()
     runner = CliRunner()
 
     result = runner.invoke(
