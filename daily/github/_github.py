@@ -274,7 +274,7 @@ class Github:
             "post", "https://api.github.com/graphql", json={"query": query}
         )
 
-        results = list[GithubEvent]()
+        results: list[GithubEvent] = []
         for edge in pydash.get(response.json(), path, []):
             if node := pydash.get(edge, "node", None):
                 results.append(GithubEvent.model_validate(node))
@@ -288,7 +288,7 @@ class Github:
     ) -> list[GithubEvent]:
         response_path = path
         cursor = "null"
-        results = list[GithubEvent]()
+        results: list[GithubEvent] = []
 
         while True:
             response = self._make_request(
