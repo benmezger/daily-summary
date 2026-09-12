@@ -55,11 +55,12 @@ class Github:
     ) -> Iterable[GithubEvent]:
         event_ids = set[str]()
         graphql_queries = (
-            queries.issues.format(
+            lambda after: queries.issues.format(
                 username=self.username,
                 created_at=f"{created_at:%Y-%m-%d}",
+                after=after,
             ),
-            queries.pull_requests.format(
+            lambda after: queries.pull_requests.format(
                 username=self.username,
                 updated_after=created_at.replace(
                     hour=0,
@@ -73,11 +74,15 @@ class Github:
                     second=59,
                     microsecond=0,
                 ).isoformat(timespec="seconds"),
+                after=after,
             ),
         )
 
-        for query in graphql_queries:
-            for event in self._make_graphql_request(query, path="data.search.edges"):
+        for query_factory in graphql_queries:
+            for event in self._make_paginated_graphql_request(
+                query_factory,
+                path="data.search",
+            ):
                 if event.id in event_ids:
                     continue
                 if self._should_be_excluded(
@@ -273,6 +278,37 @@ class Github:
         for edge in pydash.get(response.json(), path, []):
             if node := pydash.get(edge, "node", None):
                 results.append(GithubEvent.model_validate(node))
+
+        return results
+
+    def _make_paginated_graphql_request(
+        self,
+        query_factory: Any,
+        path: str,
+    ) -> list[GithubEvent]:
+        response_path = path
+        cursor = "null"
+        results = list[GithubEvent]()
+
+        while True:
+            response = self._make_request(
+                "post",
+                "https://api.github.com/graphql",
+                json={"query": query_factory(cursor)},
+            )
+            data = pydash.get(response.json(), response_path, {})
+
+            for edge in pydash.get(data, "edges", []):
+                if node := pydash.get(edge, "node", None):
+                    results.append(GithubEvent.model_validate(node))
+
+            if not pydash.get(data, "pageInfo.hasNextPage", False):
+                break
+
+            if not (next_cursor := pydash.get(data, "pageInfo.endCursor", None)):
+                break
+
+            cursor = f'"{next_cursor}"'
 
         return results
 

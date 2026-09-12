@@ -12,6 +12,90 @@ from daily.github import Github
 from daily.models import Account, EventType, GithubEvent, Repository
 
 
+def test_make_paginated_graphql_request_fetches_all_pages(monkeypatch):
+    github = Github("token", username="benmezger")
+    queries: list[str] = []
+    responses = iter(
+        (
+            {
+                "data": {
+                    "search": {
+                        "edges": [
+                            {
+                                "node": {
+                                    "id": "issue-1",
+                                    "title": "First page issue",
+                                    "url": "https://github.com/benmezger/daily-summary/issues/1",
+                                    "createdAt": "2026-09-11T07:00:00",
+                                    "repository": {
+                                        "nameWithOwner": "benmezger/daily-summary"
+                                    },
+                                    "state": "OPEN",
+                                }
+                            }
+                        ],
+                        "pageInfo": {"hasNextPage": True, "endCursor": "cursor-1"},
+                    }
+                }
+            },
+            {
+                "data": {
+                    "search": {
+                        "edges": [
+                            {
+                                "node": {
+                                    "id": "issue-2",
+                                    "title": "Second page issue",
+                                    "url": "https://github.com/benmezger/daily-summary/issues/2",
+                                    "createdAt": "2026-09-11T08:00:00",
+                                    "repository": {
+                                        "nameWithOwner": "benmezger/daily-summary"
+                                    },
+                                    "state": "OPEN",
+                                }
+                            }
+                        ],
+                        "pageInfo": {"hasNextPage": False, "endCursor": None},
+                    }
+                }
+            },
+        )
+    )
+
+    class FakeResponse:
+        def __init__(self, payload: dict) -> None:
+            self._payload = payload
+
+        def json(self) -> dict:
+            return self._payload
+
+    def fake_make_request(self, method: str, url: str, json: dict | None = None):
+        queries.append(json["query"])
+        return FakeResponse(next(responses))
+
+    monkeypatch.setattr(Github, "_make_request", fake_make_request)
+
+    result = github._make_paginated_graphql_request(
+        lambda after: (
+            "{ search(query: \"author:benmezger is:issue\", type: ISSUE, "
+            f"first: 100, after: {after}) "
+            "{ edges { node { id title url createdAt repository { nameWithOwner } "
+            "} } pageInfo { hasNextPage endCursor } } }"
+        ),
+        path="data.search",
+    )
+
+    assert [event.id for event in result] == ["issue-1", "issue-2"]
+    assert queries == [
+        '{ search(query: "author:benmezger is:issue", type: ISSUE, first: 100, '
+        "after: null) { edges { node { id title url createdAt repository { "
+        'nameWithOwner } } } pageInfo { hasNextPage endCursor } } }',
+        '{ search(query: "author:benmezger is:issue", type: ISSUE, first: 100, '
+        'after: "cursor-1") { edges { node { id title url createdAt repository '
+        '{ nameWithOwner } } } pageInfo { hasNextPage endCursor } } }',
+    ]
+
+
 def test_issues_from_includes_updated_pull_requests(monkeypatch):
     github = Github("token", username="benmezger")
     pull_request = GithubEvent(
@@ -35,7 +119,8 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
     )
     queries: list[tuple[str, str]] = []
 
-    def fake_make_graphql_request(self, graphql_query: str, path: str):
+    def fake_make_paginated_graphql_request(self, query_factory, path: str):
+        graphql_query = query_factory("null")
         queries.append((graphql_query, path))
         if "is:issue" in graphql_query:
             return [issue, pull_request]
@@ -46,7 +131,11 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
             return [pull_request]
         return []
 
-    monkeypatch.setattr(Github, "_make_graphql_request", fake_make_graphql_request)
+    monkeypatch.setattr(
+        Github,
+        "_make_paginated_graphql_request",
+        fake_make_paginated_graphql_request,
+    )
 
     result = list(github.issues_from(datetime(2026, 9, 11), [], []))
 
@@ -59,6 +148,7 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
     query: "author:benmezger created:2026-09-11 is:issue"
     type: ISSUE
     first: 100
+    after: null
   ) {
     edges {
       node {
@@ -89,10 +179,14 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
         }
       }
     }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
   }
 }
 """,
-            "data.search.edges",
+            "data.search",
         ),
         (
             """
@@ -101,6 +195,7 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
     query: "author:benmezger updated:2026-09-11T00:00:00..2026-09-11T23:59:59 is:pr"
     type: ISSUE
     first: 100
+    after: null
   ) {
     edges {
       node {
@@ -119,10 +214,14 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
         }
       }
     }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
   }
 }
 """,
-            "data.search.edges",
+            "data.search",
         ),
     ]
 
