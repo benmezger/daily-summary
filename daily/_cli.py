@@ -244,6 +244,9 @@ async def daily_summary(
         context.github.issues_from(
             filter_date, context.excluded_repositories, context.excluded_organizations
         ),
+        context.github.pull_requests_from(
+            filter_date, context.excluded_repositories, context.excluded_organizations
+        ),
         [
             event
             async for event in context.github.commits_from(
