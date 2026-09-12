@@ -49,7 +49,7 @@ issues: Final[str] = """
 pull_requests: Final[str] = """
 {{
   search(
-    query: "author:{username} updated:{updated_at}..{updated_at} is:pr"
+    query: "author:{username} updated:{updated_after}..{updated_before} is:pr"
     type: ISSUE
     first: 100
   ) {{

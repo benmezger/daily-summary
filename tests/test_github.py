@@ -39,7 +39,12 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
         queries.append((graphql_query, path))
         if "is:issue" in graphql_query:
             return [issue, pull_request]
-        return [pull_request]
+        if (
+            "updated:2026-09-11T00:00:00Z..2026-09-11T23:59:59Z is:pr"
+            in graphql_query
+        ):
+            return [pull_request]
+        return []
 
     monkeypatch.setattr(Github, "_make_graphql_request", fake_make_graphql_request)
 
@@ -93,7 +98,7 @@ def test_issues_from_includes_updated_pull_requests(monkeypatch):
             """
 {
   search(
-    query: "author:benmezger updated:2026-09-11..2026-09-11 is:pr"
+    query: "author:benmezger updated:2026-09-11T00:00:00Z..2026-09-11T23:59:59Z is:pr"
     type: ISSUE
     first: 100
   ) {

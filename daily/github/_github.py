@@ -61,7 +61,8 @@ class Github:
             ),
             queries.pull_requests.format(
                 username=self.username,
-                updated_at=f"{created_at:%Y-%m-%d}",
+                updated_after=f"{created_at:%Y-%m-%d}T00:00:00Z",
+                updated_before=f"{created_at:%Y-%m-%d}T23:59:59Z",
             ),
         )
 
